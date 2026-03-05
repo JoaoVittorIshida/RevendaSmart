@@ -10,10 +10,15 @@ const Vendas = () => {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [selectedUnit, setSelectedUnit] = useState(null);
 
+    const getLocalDate = () => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+
     const [saleData, setSaleData] = useState({
         precoVenda: '',
         canalVendaId: '',
-        dataVenda: new Date().toISOString().split('T')[0]
+        dataVenda: getLocalDate()
     });
 
     // Filter Products with Stock
@@ -59,7 +64,7 @@ const Vendas = () => {
         setSaleData({
             precoVenda: '',
             canalVendaId: '',
-            dataVenda: new Date().toISOString().split('T')[0]
+            dataVenda: getLocalDate()
         });
     };
 

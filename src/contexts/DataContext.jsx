@@ -190,6 +190,16 @@ export const DataProvider = ({ children }) => {
     const adicionarCanalCompra = (nome) => createAux('/dados/canais-compra', nome, setCanaisCompra);
     const removerCanalCompra = (id) => deleteAux('/dados/canais-compra', id, setCanaisCompra);
 
+    // --- Helpers: Formatação ---
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
+        // As data do banco já vêm com T12:00:00 (garantido no backend)
+        // Se usar apenas new Date(str).toLocaleDateString(), ele funciona bem pra UTC+T12.
+        // Mas se a data vier sem T12 (ex: "2025-01-01"), adicionamos para estabilizar o fuso.
+        const safeString = dateString.includes('T') ? dateString : `${dateString}T12:00:00`;
+        return new Date(safeString).toLocaleDateString('pt-BR');
+    };
+
     // --- Derived State: Vendas (Histórico) ---
     // Mantém a mesma lógica de filtro do lado do cliente para performance imediata
     const vendas = itensEstoque
@@ -228,7 +238,8 @@ export const DataProvider = ({ children }) => {
         adicionarCanalVenda,
         removerCanalVenda,
         adicionarCanalCompra,
-        removerCanalCompra
+        removerCanalCompra,
+        formatDate
     };
 
     return (

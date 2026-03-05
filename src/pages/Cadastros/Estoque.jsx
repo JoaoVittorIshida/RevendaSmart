@@ -4,7 +4,7 @@ import { Plus, Package, ChevronDown, ChevronUp, Save, X, ArrowDownRight, Tag } f
 import { Link } from 'react-router-dom';
 
 const Estoque = () => {
-    const { produtos, itensEstoque, canaisCompra, adicionarEstoqueEmLote } = useData();
+    const { produtos, itensEstoque, canaisCompra, adicionarEstoqueEmLote, formatDate } = useData();
     const [visibilidadeForm, setVisibilidadeForm] = useState(false);
     const [produtoExpandido, setProdutoExpandido] = useState(null);
 
@@ -253,7 +253,7 @@ const Estoque = () => {
                                                 </div>
                                                 <div className="flex items-center gap-4 text-gray-400">
                                                     <span className="text-xs">
-                                                        Entrada: {new Date(item.dataEntrada).toLocaleDateString()}
+                                                        Entrada: {formatDate(item.dataEntrada)}
                                                     </span>
                                                     <Tag size={14} />
                                                 </div>

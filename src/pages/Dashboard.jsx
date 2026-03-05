@@ -22,7 +22,7 @@ const KPICard = ({ title, value, subvalue, icon: Icon, color }) => (
 );
 
 const Dashboard = () => {
-    const { itensEstoque, produtos } = useData();
+    const { itensEstoque, produtos, formatDate } = useData();
     const [periodo, setPeriodo] = useState('total'); // 'total' | '30dias'
 
     const dadosCalculados = useMemo(() => {
@@ -156,7 +156,7 @@ const Dashboard = () => {
                                     {dadosCalculados.recentes.map(item => (
                                         <tr key={item.id}>
                                             <td className="text-secondary">
-                                                {new Date(item.dataVenda).toLocaleDateString()}
+                                                {formatDate(item.dataVenda)}
                                             </td>
                                             <td className="text-primary font-medium">
                                                 {item.productName}

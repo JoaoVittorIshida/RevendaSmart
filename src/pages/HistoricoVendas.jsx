@@ -3,7 +3,7 @@ import { useData } from '../contexts/DataContext';
 import { FileText, Calendar, DollarSign, Search } from 'lucide-react';
 
 const HistoricoVendas = () => {
-    const { vendas } = useData();
+    const { vendas, formatDate } = useData();
 
     if (!vendas) {
         return (
@@ -57,7 +57,7 @@ const HistoricoVendas = () => {
                                         <td className="font-medium text-gray-700">
                                             <div className="flex items-center gap-2">
                                                 <Calendar size={14} className="text-gray-400" />
-                                                {new Date(venda.data).toLocaleDateString()}
+                                                {formatDate(venda.data)}
                                             </div>
                                         </td>
                                         <td className="font-semibold text-gray-800">{venda.produto}</td>

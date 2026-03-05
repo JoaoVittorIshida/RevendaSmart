@@ -13,7 +13,12 @@ const getStock = async (req, res) => {
             WHERE p.usuario_id = ?
         `, [userId]);
 
-        // Converte decimais para números (MySQL driver retorna string para DECIMAL)
+        // Converte decimais para números e estabiliza fuso horário das datas
+        const safeDate = (dateVal) => {
+            if (!dateVal) return null;
+            return new Date(dateVal).toISOString().split('T')[0] + 'T12:00:00';
+        };
+
         const formatItem = (item) => ({
             ...item,
             id: item.id,
@@ -22,10 +27,10 @@ const getStock = async (req, res) => {
             canalCompraId: item.canal_compra_id,
             origem: item.origem,
             status: item.status,
-            dataEntrada: item.data_entrada,
+            dataEntrada: safeDate(item.data_entrada),
             precoVenda: item.preco_venda ? Number(item.preco_venda) : null,
             canalVendaId: item.canal_venda_id,
-            dataVenda: item.data_venda
+            dataVenda: safeDate(item.data_venda)
         });
 
         res.json(rows.map(formatItem));
