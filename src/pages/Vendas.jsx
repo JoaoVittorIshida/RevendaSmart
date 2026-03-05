@@ -47,10 +47,15 @@ const Vendas = () => {
         e.preventDefault();
         if (!selectedUnit || !saleData.precoVenda || !saleData.canalVendaId) return;
 
+        // Junta a data escolhida no calendário com a hora atual do momento do clique (para ordenação interna)
+        const currentDate = new Date();
+        const [year, month, day] = saleData.dataVenda.split('-');
+        currentDate.setFullYear(year, month - 1, day);
+
         await venderItem(selectedUnit.id, {
             precoVenda: Number(saleData.precoVenda),
             canalVendaId: saleData.canalVendaId,
-            dataVenda: saleData.dataVenda
+            dataVenda: currentDate.toISOString() // Salva no DB com a data escolhida + o horário exato de agora
         });
 
         alert('Venda registrada com sucesso!');

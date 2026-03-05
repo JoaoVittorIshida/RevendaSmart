@@ -13,10 +13,10 @@ const getStock = async (req, res) => {
             WHERE p.usuario_id = ?
         `, [userId]);
 
-        // Converte decimais para números e estabiliza fuso horário das datas
+        // Retorna a string ISO completa (com horário real do banco)
         const safeDate = (dateVal) => {
             if (!dateVal) return null;
-            return new Date(dateVal).toISOString().split('T')[0] + 'T12:00:00';
+            return new Date(dateVal).toISOString();
         };
 
         const formatItem = (item) => ({
@@ -81,9 +81,20 @@ const sellItem = async (req, res) => {
 
         if (check.length === 0) return res.status(404).json({ message: 'Item não encontrado.' });
 
+        // O MySQL requer o formato YYYY-MM-DD HH:MM:SS
+        const parseMySQLDate = (isoString) => {
+            const date = isoString ? new Date(isoString) : new Date();
+            // Subtrai o offset do fuso atual para manter a hora local certa no toISOString
+            const offsetMs = date.getTimezoneOffset() * 60 * 1000;
+            const msLocal = date.getTime() - offsetMs;
+            const dateLocal = new Date(msLocal);
+
+            return dateLocal.toISOString().slice(0, 19).replace('T', ' ');
+        };
+
         await db.query(
             'UPDATE estoque SET status = ?, preco_venda = ?, canal_venda_id = ?, data_venda = ? WHERE id = ?',
-            ['vendido', precoVenda, canalVendaId, dataVenda || new Date(), id]
+            ['vendido', precoVenda, canalVendaId, parseMySQLDate(dataVenda), id]
         );
 
         res.json({ message: 'Venda registrada com sucesso!' });

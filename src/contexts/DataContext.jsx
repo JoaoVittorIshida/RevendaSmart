@@ -193,9 +193,7 @@ export const DataProvider = ({ children }) => {
     // --- Helpers: Formatação ---
     const formatDate = (dateString) => {
         if (!dateString) return '';
-        // As data do banco já vêm com T12:00:00 (garantido no backend)
-        // Se usar apenas new Date(str).toLocaleDateString(), ele funciona bem pra UTC+T12.
-        // Mas se a data vier sem T12 (ex: "2025-01-01"), adicionamos para estabilizar o fuso.
+        // Oculta a hora do usuário, mas previne que a exibição "volte 1 dia"
         const safeString = dateString.includes('T') ? dateString : `${dateString}T12:00:00`;
         return new Date(safeString).toLocaleDateString('pt-BR');
     };
