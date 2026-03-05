@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken');
 
 const verifyToken = (req, res, next) => {
-    const token = req.headers['authorization'];
+    // Tenta pegar do cookie primeiro, depois do header antigo (fallback)
+    const token = req.cookies?.token || req.headers['authorization'];
 
     if (!token) {
         return res.status(403).json({ message: 'Token de autenticação não fornecido.' });

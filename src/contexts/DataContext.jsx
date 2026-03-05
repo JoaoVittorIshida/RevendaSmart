@@ -6,7 +6,7 @@ const DataContext = createContext();
 export const useData = () => useContext(DataContext);
 
 export const DataProvider = ({ children }) => {
-    const { token, usuario } = useAuth();
+    const { usuario } = useAuth();
     // Usa a variável de ambiente se existir, senão usa localhost
     const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/api';
 
@@ -16,19 +16,19 @@ export const DataProvider = ({ children }) => {
     const [canaisVenda, setCanaisVenda] = useState([]);
     const [canaisCompra, setCanaisCompra] = useState([]);
 
-    // Helper para requisições com Auth
+    // Helper para requisições com Auth via Cookie
     const authFetch = useCallback(async (endpoint, options = {}) => {
-        if (!token) return null;
+        if (!usuario) return null;
 
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
             ...options.headers
         };
 
         const response = await fetch(`${API_URL}${endpoint}`, {
             ...options,
-            headers
+            headers,
+            credentials: 'include'
         });
 
         if (response.status === 401) {
@@ -37,10 +37,10 @@ export const DataProvider = ({ children }) => {
         }
 
         return response;
-    }, [token]);
+    }, [usuario, API_URL]);
 
     const fetchData = useCallback(async () => {
-        if (!token) return;
+        if (!usuario) return;
 
         try {
             const [resProd, resEstoque, resCat, resCanalV, resCanalC] = await Promise.all([
@@ -60,11 +60,11 @@ export const DataProvider = ({ children }) => {
         } catch (error) {
             console.error("Erro ao carregar dados:", error);
         }
-    }, [authFetch, token]);
+    }, [authFetch, usuario]);
 
     // Carregar dados ao entrar ou mudar usuário
     useEffect(() => {
-        if (usuario && token) {
+        if (usuario) {
             fetchData();
         } else {
             setProdutos([]);
@@ -73,7 +73,7 @@ export const DataProvider = ({ children }) => {
             setCanaisVenda([]);
             setCanaisCompra([]);
         }
-    }, [usuario, token, fetchData]);
+    }, [usuario, fetchData]);
 
 
     // --- Actions: Produtos ---

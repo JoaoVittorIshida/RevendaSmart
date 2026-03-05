@@ -9,17 +9,31 @@ export const AuthProvider = ({ children }) => {
     const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     const API_URL = `${BASE_URL}/api/auth`;
 
-    const [usuario, setUsuario] = useState(() => {
-        try {
-            const storedUser = localStorage.getItem('revenda_smart_user');
-            return storedUser ? JSON.parse(storedUser) : null;
-        } catch (error) {
-            return null;
-        }
-    });
+    const [usuario, setUsuario] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-    const [token, setToken] = useState(() => localStorage.getItem('revenda_smart_token'));
-    const [loading, setLoading] = useState(false);
+    useEffect(() => {
+        const checkSession = async () => {
+            try {
+                const response = await fetch(`${API_URL}/verify`, {
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setUsuario(data.user);
+                } else {
+                    setUsuario(null);
+                }
+            } catch (error) {
+                console.error("Erro ao verificar sessão:", error);
+                setUsuario(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        checkSession();
+    }, []);
 
     const login = async (loginUsuario, senha) => {
         setLoading(true);
@@ -27,6 +41,7 @@ export const AuthProvider = ({ children }) => {
             const response = await fetch(`${API_URL}/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ usuario: loginUsuario, senha })
             });
 
@@ -37,13 +52,8 @@ export const AuthProvider = ({ children }) => {
             }
 
             // Sucesso
-            const { token, user } = data;
+            const { user } = data;
 
-            // Persistir Token e Usuário/
-            localStorage.setItem('revenda_smart_token', token);
-            localStorage.setItem('revenda_smart_user', JSON.stringify(user));
-
-            setToken(token);
             setUsuario(user);
 
             return { success: true };
@@ -61,6 +71,7 @@ export const AuthProvider = ({ children }) => {
             const response = await fetch(`${API_URL}/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ nome, usuario: loginUsuario, senha })
             });
 
@@ -81,16 +92,24 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const logout = () => {
-        localStorage.removeItem('revenda_smart_token');
-        localStorage.removeItem('revenda_smart_user');
-        setToken(null);
-        setUsuario(null);
+    const logout = async () => {
+        try {
+            await fetch(`${API_URL}/logout`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+        } catch (error) {
+            console.error("Erro no logout", error);
+        } finally {
+            setUsuario(null);
+            // Fallback clear if moving from old version
+            localStorage.removeItem('revenda_smart_token');
+            localStorage.removeItem('revenda_smart_user');
+        }
     };
 
     const value = {
         usuario,
-        token,
         loading,
         login,
         registrar,

@@ -1,13 +1,29 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 const db = require('./db');
 
 const app = express();
 
+// Trust proxy for rate limiters (Heroku, Render, Vercel, etc)
+app.set('trust proxy', 1);
+
 // Middlewares
+app.use(helmet());
+app.use(cookieParser());
+
 const corsOptions = {
-    origin: process.env.FRONTEND_URL || '*', // Em produção, defina a variável FRONTEND_URL
+    origin: function (origin, callback) {
+        // Permitir requisições sem origin (como mobile apps ou curl) ou qualquer localhost
+        if (!origin || /^http:\/\/localhost:\d+$/.test(origin) || origin === process.env.FRONTEND_URL) {
+            callback(null, true);
+        } else {
+            callback(new Error('Bloqueado pelo CORS'));
+        }
+    },
+    credentials: true,
     optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));

@@ -56,8 +56,14 @@ const login = async (req, res) => {
             { expiresIn: '1d' }
         );
 
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            maxAge: 24 * 60 * 60 * 1000 // 1 dia
+        });
+
         res.json({
-            token,
             user: {
                 id: user.id,
                 nome: user.nome,
@@ -71,4 +77,37 @@ const login = async (req, res) => {
     }
 };
 
-module.exports = { register, login };
+const verifySession = async (req, res) => {
+    try {
+        const token = req.cookies.token;
+
+        if (!token) {
+            return res.status(401).json({ message: 'Não autenticado' });
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        // Buscar dados atualizados do usuário (opcional, mas recomendado)
+        const [users] = await db.query('SELECT id, nome, usuario FROM usuarios WHERE id = ?', [decoded.id]);
+
+        if (users.length === 0) {
+            return res.status(401).json({ message: 'Usuário não encontrado' });
+        }
+
+        res.json({ user: users[0] });
+
+    } catch (error) {
+        return res.status(401).json({ message: 'Sessão inválida ou expirada.' });
+    }
+};
+
+const logout = (req, res) => {
+    res.clearCookie('token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    });
+    res.json({ message: 'Logout realizado com sucesso' });
+};
+
+module.exports = { register, login, verifySession, logout };
