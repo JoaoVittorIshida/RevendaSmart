@@ -9,8 +9,7 @@ const getStock = async (req, res) => {
         const [rows] = await db.query(`
             SELECT e.* 
             FROM estoque e
-            JOIN produtos p ON e.produto_id = p.id
-            WHERE p.usuario_id = ?
+            WHERE e.usuario_id = ?
         `, [userId]);
 
         // Retorna a string ISO completa (com horário real do banco)
@@ -51,11 +50,11 @@ const addStockBatch = async (req, res) => {
 
         const values = [];
         for (let i = 0; i < quantidade; i++) {
-            values.push([uuidv4(), produtoId, precoCusto, canalCompraId, origem, 'disponivel']);
+            values.push([uuidv4(), produtoId, userId, precoCusto, canalCompraId, origem, 'disponivel']);
         }
 
         await db.query(
-            'INSERT INTO estoque (id, produto_id, preco_custo, canal_compra_id, origem, status) VALUES ?',
+            'INSERT INTO estoque (id, produto_id, usuario_id, preco_custo, canal_compra_id, origem, status) VALUES ?',
             [values]
         );
 
@@ -72,11 +71,10 @@ const sellItem = async (req, res) => {
         const { precoVenda, canalVendaId, dataVenda } = req.body;
         const userId = req.user.id;
 
-        // Verificar item e usuário
+        // Verificar item e usuário (direto na tabela estoque)
         const [check] = await db.query(`
-            SELECT e.* FROM estoque e 
-            JOIN produtos p ON e.produto_id = p.id 
-            WHERE e.id = ? AND p.usuario_id = ?
+            SELECT id FROM estoque 
+            WHERE id = ? AND usuario_id = ?
         `, [id, userId]);
 
         if (check.length === 0) return res.status(404).json({ message: 'Item não encontrado.' });
@@ -93,8 +91,8 @@ const sellItem = async (req, res) => {
         };
 
         await db.query(
-            'UPDATE estoque SET status = ?, preco_venda = ?, canal_venda_id = ?, data_venda = ? WHERE id = ?',
-            ['vendido', precoVenda, canalVendaId, parseMySQLDate(dataVenda), id]
+            'UPDATE estoque SET status = ?, preco_venda = ?, canal_venda_id = ?, data_venda = ? WHERE id = ? AND usuario_id = ?',
+            ['vendido', precoVenda, canalVendaId, parseMySQLDate(dataVenda), id, userId]
         );
 
         res.json({ message: 'Venda registrada com sucesso!' });
@@ -116,14 +114,13 @@ const deleteStockItem = async (req, res) => {
 
         // Verificar permissão
         const [check] = await db.query(`
-            SELECT e.id FROM estoque e 
-            JOIN produtos p ON e.produto_id = p.id 
-            WHERE e.id = ? AND p.usuario_id = ?
+            SELECT id FROM estoque 
+            WHERE id = ? AND usuario_id = ?
         `, [id, userId]);
 
         if (check.length === 0) return res.status(404).json({ message: 'Item não encontrado.' });
 
-        await db.query('DELETE FROM estoque WHERE id = ?', [id]);
+        await db.query('DELETE FROM estoque WHERE id = ? AND usuario_id = ?', [id, userId]);
         res.json({ message: 'Item removido do estoque.' });
 
     } catch (error) {

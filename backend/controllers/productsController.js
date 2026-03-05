@@ -43,8 +43,8 @@ const updateProduct = async (req, res) => {
         }
 
         await db.query(
-            'UPDATE produtos SET nome = ?, marca = ?, categoria = ?, tipo = ?, foto = ? WHERE id = ?',
-            [nome, marca, categoria, tipo, foto, id]
+            'UPDATE produtos SET nome = ?, marca = ?, categoria = ?, tipo = ?, foto = ? WHERE id = ? AND usuario_id = ?',
+            [nome, marca, categoria, tipo, foto, id, userId]
         );
 
         res.json({ message: 'Produto atualizado com sucesso' });
