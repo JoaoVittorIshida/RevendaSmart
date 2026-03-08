@@ -49,10 +49,10 @@ const icons = {
 };
 
 const styles = {
-    success: 'bg-white border-green-500  text-green-700  [&_.toast-icon]:text-green-500',
-    error: 'bg-white border-red-500    text-red-700    [&_.toast-icon]:text-red-500',
-    warning: 'bg-white border-orange-400 text-orange-700 [&_.toast-icon]:text-orange-400',
-    info: 'bg-white border-blue-500   text-blue-700   [&_.toast-icon]:text-blue-500',
+    success: 'bg-white dark:bg-slate-800 border-green-500  text-green-700  dark:text-green-400  [&_.toast-icon]:text-green-500',
+    error: 'bg-white dark:bg-slate-800 border-red-500    text-red-700    dark:text-red-400    [&_.toast-icon]:text-red-500',
+    warning: 'bg-white dark:bg-slate-800 border-orange-400 text-orange-700 dark:text-orange-400 [&_.toast-icon]:text-orange-400',
+    info: 'bg-white dark:bg-slate-800 border-blue-500   text-blue-700   dark:text-blue-400   [&_.toast-icon]:text-blue-500',
 };
 
 const ToastItem = ({ toast, onRemove }) => (
@@ -60,11 +60,11 @@ const ToastItem = ({ toast, onRemove }) => (
         <span className="toast-icon mt-0.5">{icons[toast.type]}</span>
         <div className="flex-1 min-w-0">
             {toast.title && <p className="font-semibold text-sm leading-tight">{toast.title}</p>}
-            {toast.message && <p className="text-xs text-slate-500 mt-0.5 leading-snug">{toast.message}</p>}
+            {toast.message && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">{toast.message}</p>}
         </div>
         <button
             onClick={() => onRemove(toast.id)}
-            className="text-slate-300 hover:text-slate-500 transition-colors shrink-0 mt-0.5"
+            className="text-slate-300 dark:text-slate-500 hover:text-slate-500 dark:hover:text-slate-300 transition-colors shrink-0 mt-0.5"
         >
             <X size={16} />
         </button>

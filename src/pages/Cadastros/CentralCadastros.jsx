@@ -10,8 +10,8 @@ const CadastroCard = ({ to, icon: Icon, title, description, color }) => (
             </div>
             <ArrowRight className="text-slate-300 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-200" size={18} />
         </div>
-        <h3 className="text-base font-bold text-slate-800 mb-1">{title}</h3>
-        <p className="text-sm text-slate-500 leading-relaxed">{description}</p>
+        <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 mb-1">{title}</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{description}</p>
     </Link>
 );
 

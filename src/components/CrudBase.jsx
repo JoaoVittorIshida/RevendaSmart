@@ -81,11 +81,11 @@ const CrudBase = ({ title, items, onAdd, onRemove, backPath = '/cadastros' }) =>
                     ) : (
                         <div className="flex flex-col gap-2">
                             {items.map((item) => (
-                                <div key={item.id} className="flex items-center justify-between px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-blue-300 transition-colors group">
-                                    <span className="font-semibold text-slate-700">{item.nome}</span>
+                                <div key={item.id} className="flex items-center justify-between px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 hover:border-blue-300 dark:hover:border-blue-500 transition-colors group">
+                                    <span className="font-semibold text-slate-700 dark:text-slate-200">{item.nome}</span>
                                     <button
                                         onClick={() => handleRemove(item)}
-                                        className="p-1.5 rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                                        className="p-1.5 rounded-lg text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                                         title="Remover"
                                     >
                                         <Trash2 size={16} />

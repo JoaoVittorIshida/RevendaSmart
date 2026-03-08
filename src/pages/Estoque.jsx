@@ -45,20 +45,20 @@ const Estoque = () => {
                         <div key={prod.id} className="card p-0 overflow-hidden">
                             {/* Accordion Header */}
                             <div
-                                className="p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50/80 transition-colors duration-150"
+                                className="p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-700/40 transition-colors duration-150"
                                 onClick={() => setProdutoExpandido(produtoExpandido === prod.id ? null : prod.id)}
                             >
                                 <div className="flex items-center gap-4 min-w-0">
                                     {prod.foto ? (
                                         <img src={prod.foto} className="w-14 h-14 rounded-xl object-cover shadow-sm shrink-0" alt={prod.nome} />
                                     ) : (
-                                        <div className="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
-                                            <Package size={24} className="text-slate-400" />
+                                        <div className="w-14 h-14 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0">
+                                            <Package size={24} className="text-slate-400 dark:text-slate-500" />
                                         </div>
                                     )}
                                     <div className="min-w-0">
-                                        <h3 className="font-bold text-slate-800 truncate">{prod.nome}</h3>
-                                        <p className="text-sm text-slate-500 font-medium">{prod.marca}
+                                        <h3 className="font-bold text-slate-800 dark:text-slate-100 truncate">{prod.nome}</h3>
+                                        <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{prod.marca}
                                             {prod.categoria && <span className="ml-2"><span className="badge badge-gray">{prod.categoria}</span></span>}
                                         </p>
                                     </div>
@@ -67,7 +67,7 @@ const Estoque = () => {
                                 <div className="flex items-center gap-6 shrink-0 ml-4">
                                     <div className="hidden sm:flex flex-col items-end">
                                         <span className="stat-label">Custo em Estoque</span>
-                                        <span className="font-mono font-bold text-slate-800 text-base">
+                                        <span className="font-mono font-bold text-slate-800 dark:text-slate-100 text-base">
                                             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(prod.custoTotalEstoque)}
                                         </span>
                                     </div>
@@ -86,7 +86,7 @@ const Estoque = () => {
 
                             {/* Expanded Details */}
                             {produtoExpandido === prod.id && (
-                                <div className="bg-slate-50 border-t border-slate-100 p-5 animate-in slide-in-from-top-2 duration-200">
+                                <div className="bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 p-5 animate-in slide-in-from-top-2 duration-200">
                                     <div className="flex items-center justify-between mb-4">
                                         <h4 className="section-heading text-sm">
                                             <Tag size={15} className="text-slate-400" />
@@ -100,12 +100,12 @@ const Estoque = () => {
                                     ) : (
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                             {prod.itens.map((item, idx) => (
-                                                <div key={item.id} className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl text-sm hover:border-blue-300 hover:shadow-sm transition-all duration-150">
+                                                <div key={item.id} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm hover:border-blue-300 dark:hover:border-blue-500 hover:shadow-sm transition-all duration-150">
                                                     <div className="flex items-center gap-3">
                                                         <span className="badge badge-gray font-mono text-xs">#{idx + 1}</span>
                                                         <div>
                                                             <span className="stat-label">Custo Unitário</span>
-                                                            <p className="font-bold text-slate-800 font-mono">
+                                                            <p className="font-bold text-slate-800 dark:text-slate-100 font-mono">
                                                                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.precoCusto)}
                                                             </p>
                                                         </div>

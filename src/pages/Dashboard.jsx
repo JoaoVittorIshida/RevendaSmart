@@ -33,7 +33,7 @@ const useCountUp = (target, duration = 800, decimals = 0) => {
 
 /* ─── Skeleton ────────────────────────────────────────────── */
 const Skeleton = ({ className = '' }) => (
-    <div className={`animate-pulse bg-slate-200 rounded-xl ${className}`} />
+    <div className={`animate-pulse bg-slate-200 dark:bg-slate-700 rounded-xl ${className}`} />
 );
 
 const DashboardSkeleton = () => (
@@ -58,10 +58,10 @@ const CANAL_COLORS = ['#3b82f6', '#22c55e', '#a855f7', '#f97316', '#ef4444', '#0
 
 const KPICard = ({ title, rawValue, displayValue, subvalue, icon: Icon, variant }) => {
     const variants = {
-        green: { card: 'kpi-card kpi-card-green', icon: 'bg-green-100 text-green-600', value: 'text-green-700', bar: 'bg-green-500' },
-        blue: { card: 'kpi-card kpi-card-blue', icon: 'bg-blue-100 text-blue-600', value: 'text-blue-700', bar: 'bg-blue-500' },
-        purple: { card: 'kpi-card kpi-card-purple', icon: 'bg-purple-100 text-purple-600', value: 'text-purple-700', bar: 'bg-purple-500' },
-        orange: { card: 'kpi-card kpi-card-orange', icon: 'bg-orange-100 text-orange-600', value: 'text-orange-700', bar: 'bg-orange-500' },
+        green: { card: 'kpi-card kpi-card-green', icon: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400', value: 'text-green-700 dark:text-green-400', bar: 'bg-green-500' },
+        blue: { card: 'kpi-card kpi-card-blue', icon: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400', value: 'text-blue-700 dark:text-blue-400', bar: 'bg-blue-500' },
+        purple: { card: 'kpi-card kpi-card-purple', icon: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400', value: 'text-purple-700 dark:text-purple-400', bar: 'bg-purple-500' },
+        orange: { card: 'kpi-card kpi-card-orange', icon: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400', value: 'text-orange-700 dark:text-orange-400', bar: 'bg-orange-500' },
     };
     const v = variants[variant] || variants.blue;
 
@@ -87,8 +87,8 @@ const AreaTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
     const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
     return (
-        <div className="bg-white border border-slate-200 rounded-xl shadow-lg px-4 py-3 text-sm">
-            <p className="font-semibold text-slate-600 mb-2">{label}</p>
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg px-4 py-3 text-sm">
+            <p className="font-semibold text-slate-600 dark:text-slate-300 mb-2">{label}</p>
             {payload.map((p) => (
                 <p key={p.dataKey} style={{ color: p.color }} className="font-mono font-bold">
                     {p.name}: {fmt(p.value)}
@@ -104,7 +104,7 @@ const PieLegend = ({ payload }) => (
         {payload?.map((entry) => (
             <div key={entry.value} className="flex items-center gap-2 text-xs">
                 <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: entry.color }} />
-                <span className="text-slate-600 font-medium truncate">{entry.value}</span>
+                <span className="text-slate-700 dark:text-slate-300 font-medium truncate">{entry.value}</span>
             </div>
         ))}
     </div>
@@ -113,9 +113,9 @@ const PieLegend = ({ payload }) => (
 const PieCustomTooltip = ({ active, payload }) => {
     if (!active || !payload?.length) return null;
     return (
-        <div className="bg-white border border-slate-200 rounded-xl shadow-lg px-4 py-3 text-sm">
-            <p className="font-semibold text-slate-700">{payload[0].name}</p>
-            <p className="text-slate-500">{payload[0].value} venda{payload[0].value !== 1 ? 's' : ''}</p>
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg px-4 py-3 text-sm">
+            <p className="font-semibold text-slate-700 dark:text-slate-200">{payload[0].name}</p>
+            <p className="text-slate-500 dark:text-slate-400">{payload[0].value} venda{payload[0].value !== 1 ? 's' : ''}</p>
         </div>
     );
 };
@@ -196,14 +196,14 @@ const Dashboard = () => {
                     <p className="page-subtitle">Visão geral do seu negócio</p>
                 </div>
                 {/* Period Toggle */}
-                <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-sm self-start sm:self-auto">
+                <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm self-start sm:self-auto">
                     {[{ key: 'total', label: 'Total' }, { key: '30dias', label: 'Últimos 30 dias' }].map(opt => (
                         <button
                             key={opt.key}
                             onClick={() => setPeriodo(opt.key)}
                             className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap ${periodo === opt.key
                                 ? 'bg-blue-600 text-white shadow-sm'
-                                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
                                 }`}
                         >
                             {opt.label}
@@ -292,7 +292,7 @@ const Dashboard = () => {
 
             {/* Recent Sales */}
             <div className="card p-0 overflow-hidden">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
                     <h2 className="section-heading">
                         <BarChart2 size={18} className="text-blue-500" />
                         Vendas Recentes
@@ -323,10 +323,10 @@ const Dashboard = () => {
                             <tbody>
                                 {dadosCalculados.recentes.map(item => (
                                     <tr key={item.id}>
-                                        <td className="text-slate-500 text-sm">{formatDate(item.dataVenda)}</td>
-                                        <td className="font-semibold text-slate-800">{item.productName}</td>
-                                        <td className="text-slate-500 font-mono text-sm">{formatCurrency(item.precoCusto)}</td>
-                                        <td className="text-blue-600 font-mono font-semibold">{formatCurrency(item.precoVenda)}</td>
+                                        <td className="text-slate-500 dark:text-slate-400 text-sm">{formatDate(item.dataVenda)}</td>
+                                        <td className="font-semibold text-slate-800 dark:text-slate-100">{item.productName}</td>
+                                        <td className="text-slate-500 dark:text-slate-400 font-mono text-sm">{formatCurrency(item.precoCusto)}</td>
+                                        <td className="text-blue-600 dark:text-blue-400 font-mono font-semibold">{formatCurrency(item.precoVenda)}</td>
                                         <td className="text-right">
                                             <span className="font-mono font-bold text-green-600">
                                                 {formatCurrency(item.precoVenda - item.precoCusto)}
