@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../contexts/DataContext';
-import { Save, ArrowLeft, Image as ImageIcon, X } from 'lucide-react';
+import { useToast } from '../../components/Toast';
+import { Save, ArrowLeft, Image as ImageIcon, X, Loader2 } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
 const ProdutoForm = () => {
@@ -8,6 +9,8 @@ const ProdutoForm = () => {
     const navigate = useNavigate();
     const { id } = useParams();
     const isEditing = !!id;
+    const toast = useToast();
+    const [loading, setLoading] = useState(false);
 
     const [formData, setFormData] = useState({
         nome: '',
@@ -30,14 +33,19 @@ const ProdutoForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (isEditing) {
-            await atualizarProduto(id, formData);
-            alert('Produto atualizado com sucesso!');
-        } else {
-            await adicionarProduto(formData);
-            alert('Produto cadastrado com sucesso!');
+        setLoading(true);
+        try {
+            if (isEditing) {
+                await atualizarProduto(id, formData);
+                toast.success('Produto atualizado!', `"${formData.nome}" foi atualizado com sucesso.`);
+            } else {
+                await adicionarProduto(formData);
+                toast.success('Produto cadastrado!', `"${formData.nome}" foi adicionado ao sistema.`);
+            }
+            navigate('/cadastros/produtos');
+        } finally {
+            setLoading(false);
         }
-        navigate('/cadastros/produtos');
     };
 
     // Utility: Resize Image
@@ -81,7 +89,7 @@ const ProdutoForm = () => {
         const file = e.target.files[0];
         if (file) {
             if (file.size > 5 * 1024 * 1024) { // 5MB limit
-                alert('A imagem é muito grande! tente uma menor que 5MB.');
+                toast.error('Imagem muito grande', 'Escolha uma imagem menor que 5 MB.');
                 return;
             }
 
@@ -90,7 +98,7 @@ const ProdutoForm = () => {
                 setFormData({ ...formData, foto: resizedImage });
             } catch (error) {
                 console.error("Erro ao redimensionar imagem", error);
-                alert("Erro ao processar imagem.");
+                toast.error('Erro ao processar imagem', 'Tente novamente com outro arquivo.');
             }
         }
     };
@@ -222,9 +230,12 @@ const ProdutoForm = () => {
                         <Link to="/cadastros/produtos" className="btn btn-secondary">
                             Cancelar
                         </Link>
-                        <button type="submit" className="btn btn-primary px-8">
-                            <Save size={18} />
-                            {isEditing ? 'Salvar Alterações' : 'Cadastrar Produto'}
+                        <button type="submit" className="btn btn-primary px-8" disabled={loading}>
+                            {loading
+                                ? <Loader2 size={18} className="animate-spin" />
+                                : <Save size={18} />
+                            }
+                            {loading ? 'Salvando...' : isEditing ? 'Salvar Alterações' : 'Cadastrar Produto'}
                         </button>
                     </div>
                 </form>

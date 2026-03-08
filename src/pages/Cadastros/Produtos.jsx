@@ -1,16 +1,27 @@
 import React, { useState } from 'react';
 import { useData } from '../../contexts/DataContext';
+import { useToast } from '../../components/Toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 import { Plus, Edit2, Trash2, Search, ArrowLeft, Image as ImageIcon } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const Produtos = () => {
     const { produtos, removerProduto } = useData();
     const navigate = useNavigate();
+    const toast = useToast();
+    const confirm = useConfirm();
     const [termoBusca, setTermoBusca] = useState('');
 
-    const handleDelete = (id) => {
-        if (window.confirm('Tem certeza que deseja excluir este produto?')) {
+    const handleDelete = async (id, nome) => {
+        const ok = await confirm({
+            title: 'Excluir Produto',
+            message: `Tem certeza que deseja excluir "${nome}"? Esta ação não pode ser desfeita.`,
+            confirmLabel: 'Excluir',
+            variant: 'danger',
+        });
+        if (ok) {
             removerProduto(id);
+            toast.success('Produto excluído', `"${nome}" foi removido com sucesso.`);
         }
     };
 
@@ -51,7 +62,6 @@ const Produtos = () => {
                         type="text"
                         placeholder="Buscar produtos por nome ou marca..."
                         className="input pl-10"
-                        style={{ paddingLeft: '2.5rem' }}
                         value={termoBusca}
                         onChange={e => setTermoBusca(e.target.value)}
                     />
@@ -106,7 +116,7 @@ const Produtos = () => {
                                             <Edit2 size={20} />
                                         </button>
                                         <button
-                                            onClick={() => handleDelete(produto.id)}
+                                            onClick={() => handleDelete(produto.id, produto.nome)}
                                             className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
                                             title="Excluir"
                                         >

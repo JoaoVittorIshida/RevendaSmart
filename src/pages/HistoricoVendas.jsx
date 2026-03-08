@@ -98,10 +98,10 @@ const HistoricoVendas = () => {
 
     return (
         <div className="container">
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+            <div className="page-header">
                 <div>
-                    <h1 className="text-3xl font-bold text-primary">Histórico de Vendas</h1>
-                    <p className="text-secondary">Visualize todas as vendas realizadas no sistema</p>
+                    <h1 className="page-title">Histórico de Vendas</h1>
+                    <p className="page-subtitle">Visualize todas as vendas realizadas no sistema</p>
                 </div>
             </div>
 
@@ -111,21 +111,20 @@ const HistoricoVendas = () => {
                 <input
                     type="text"
                     placeholder="Buscar nas vendas..."
-                    className="input"
-                    style={{ paddingLeft: '2.5rem' }}
+                    className="input pl-10"
                     value={searchTerm}
                     onChange={handleSearch}
                 />
             </div>
 
             <div className="card overflow-hidden">
-                <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-                    <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                        <FileText size={20} className="text-blue-500" />
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                    <h2 className="section-heading">
+                        <FileText size={18} className="text-blue-500" />
                         {searchTerm ? 'Resultados da Busca' : 'Todas as Vendas'}
                     </h2>
-                    <span className="text-sm font-medium text-gray-500 bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
-                        {searchTerm ? `Encontrados: ${totalItems}` : `Total: ${totalItems} registros`}
+                    <span className="badge badge-blue">
+                        {searchTerm ? `${totalItems} resultado${totalItems !== 1 ? 's' : ''}` : `${totalItems} registro${totalItems !== 1 ? 's' : ''}`}
                     </span>
                 </div>
 
@@ -191,9 +190,7 @@ const HistoricoVendas = () => {
                                         </td>
                                         <td className="font-semibold text-gray-800">{venda.produto}</td>
                                         <td>
-                                            <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs font-bold border border-gray-200">
-                                                {venda.categoria}
-                                            </span>
+                                            <span className="badge badge-gray">{venda.categoria}</span>
                                         </td>
                                         <td>
                                             <span className="capitalize text-sm text-gray-600">

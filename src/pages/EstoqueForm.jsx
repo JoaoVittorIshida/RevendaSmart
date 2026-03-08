@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useData } from '../contexts/DataContext';
+import { useToast } from '../components/Toast';
 import { Save, ArrowLeft, ArrowDownRight, Search, ChevronDown, Check } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -42,7 +43,7 @@ const SearchableSelect = ({ options, value, onChange, placeholder, isLoading }) 
             </div>
 
             {isOpen && (
-                <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl" style={{ backgroundColor: '#ffffff' }}>
+                <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl">
                     <div className="p-3 border-b border-gray-100 sticky top-0 bg-white z-10 rounded-t-lg">
                         <div className="flex items-center border border-gray-300 rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all shadow-sm">
                             <div className="bg-gray-50 px-3 py-2 border-r border-gray-200 flex items-center justify-center">
@@ -90,6 +91,8 @@ const SearchableSelect = ({ options, value, onChange, placeholder, isLoading }) 
 const EstoqueForm = () => {
     const { produtos, canaisCompra, adicionarEstoqueEmLote } = useData();
     const navigate = useNavigate();
+    const toast = useToast();
+    const [loading, setLoading] = useState(false);
 
     const [formData, setFormData] = useState({
         produtoId: '',
@@ -137,11 +140,12 @@ const EstoqueForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
         await adicionarEstoqueEmLote({
             ...formData,
             precoCusto: Number(formData.custoUnitario)
         });
-        alert('Movimentação registrada com sucesso!');
+        toast.success('Estoque registrado!', 'A movimentação foi salva com sucesso.');
         navigate('/estoque');
     };
 

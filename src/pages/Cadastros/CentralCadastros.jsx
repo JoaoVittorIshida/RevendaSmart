@@ -3,24 +3,24 @@ import { Link } from 'react-router-dom';
 import { Package, Tags, DollarSign, ShoppingBag, ArrowRight } from 'lucide-react';
 
 const CadastroCard = ({ to, icon: Icon, title, description, color }) => (
-    <Link to={to} className="card group hover:border-blue-500/50 transition-colors cursor-pointer block" style={{ textDecoration: 'none' }}>
+    <Link to={to} className="card group hover:border-blue-400 hover:-translate-y-1 hover:shadow-md transition-all duration-200 cursor-pointer block no-underline">
         <div className="flex items-start justify-between mb-4">
-            <div className={`p-3 rounded-lg ${color} text-white shadow-lg`}>
-                <Icon size={24} />
+            <div className={`p-3 rounded-xl ${color} text-white shadow-md`}>
+                <Icon size={22} />
             </div>
-            <ArrowRight className="text-gray-400 group-hover:text-blue-500 transition-colors" size={20} />
+            <ArrowRight className="text-slate-300 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-200" size={18} />
         </div>
-        <h3 className="text-xl font-bold text-primary mb-2 tracking-wide">{title}</h3>
-        <p className="text-secondary text-sm leading-relaxed">{description}</p>
+        <h3 className="text-base font-bold text-slate-800 mb-1">{title}</h3>
+        <p className="text-sm text-slate-500 leading-relaxed">{description}</p>
     </Link>
 );
 
 const CentralCadastros = () => {
     return (
         <div className="container">
-            <h1 className="text-3xl font-bold text-primary mb-8">Central de Cadastros</h1>
+            <h1 className="page-title mb-8">Central de Cadastros</h1>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-6">
                 <CadastroCard
                     to="/cadastros/produtos"
                     icon={Package}

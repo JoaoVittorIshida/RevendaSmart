@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../contexts/DataContext';
+import { useToast } from '../components/Toast';
 import { Plus, Package, ChevronDown, ChevronUp, Save, X, ArrowDownRight, Tag } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Estoque = () => {
     const { produtos, itensEstoque, canaisCompra, adicionarEstoqueEmLote, formatDate } = useData();
+    const toast = useToast();
     const [visibilidadeForm, setVisibilidadeForm] = useState(false);
     const [produtoExpandido, setProdutoExpandido] = useState(null);
 
@@ -56,7 +58,7 @@ const Estoque = () => {
             canalCompraId: '',
             origem: 'nacional'
         });
-        alert('Estoque adicionado com sucesso!');
+        toast.success('Estoque atualizado!', 'Entrada de estoque registrada com sucesso.');
     };
 
     // Agrupamento
