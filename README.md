@@ -1,112 +1,93 @@
-# 🚀 Revenda Smart - Sistema de Controle de Vendas
+# 🚀 Revenda Smart
 
-O **Revenda Smart** é um sistema completo e intuitivo para controle de vendas, estoque e produtos, focado em pequenos empreendedores e revendedores. Ele oferece uma gestão eficiente de catálogo, entradas e saídas de estoque (canais de compra e venda), cálculo de lucro, e um design moderno.
+Bem-vindo(a) ao **Revenda Smart**! 🎉
 
----
+Este é um sistema de controle de vendas e estoque criado especialmente para **pequenos empreendedores, revendedores e importadores**. Se você compra produtos para revender e precisa de um lugar simples e bonito para organizar tudo, você está no lugar certo!
 
-## 📋 Funcionalidades Principais
-
-- **📦 Gestão de Produtos**: Cadastro de produtos com nome, marca, categoria, tipo, cor (recém implementado para variação), preço sugerido, e fotos.
-- **🔄 Controle de Estoque**: Gerenciamento de entradas e saídas (estoque unificado ou detalhado), controlando preço de custo, e status (disponível, vendido, devolvido).
-- **🛍️ Canais de Venda e Compra**: Personalize as fontes de seus produtos e para onde/por onde estão sendo vendidos (ex: Loja Física, Instagram, Mercado Livre).
-- **🔒 Autenticação e Segurança**: Sistema de login seguro com JWT e senhas criptografadas (Bcrypt), mantendo o isolamento de dados por usuário.
-- **⌛ Histórico Preciso**: Registro exato do horário das vendas para ordenação perfeita e manutenção dos registros internos.
-- **📊 Interface Amigável**: Dashboard interativo focado na melhor experiência de usuário.
+Nosso objetivo é tirar você das planilhas complicadas e oferecer uma ferramenta visual, rápida e fácil de usar.
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## ✨ O que você pode fazer com o Revenda Smart?
 
-O projeto foi dividido em duas partes principais: Frontend e Backend.
+### 📊 Acompanhar seus Resultados (Dashboard)
+Veja de forma clara como está o seu negócio:
+- **Resumo rápido:** Quanto você faturou, qual foi o seu lucro real e quantos itens vendeu.
+- **Gráficos fáceis de entender:** Acompanhe a evolução das suas vendas nos últimos 30 dias e saiba de onde vêm seus clientes (Instagram, loja física, etc.).
 
-### 💻 Frontend
-- **React 19** com **Vite** para máxima performance.
-- **React Router DOM** para navegação SPA (Single Page Application).
-- **Lucide React** para ícones bonitos e consistentes.
-- **CSS Modules / Tailwind** para estilização moderna e responsiva.
+### 📦 Organizar seu Estoque
+- Cadastre lotes de produtos de forma super rápida.
+- O sistema calcula automaticamente o custo unitário de cada item pra você.
+- Saiba exatamente o que você tem guardado, separado por origem (nacional ou importado).
 
-### ⚙️ Backend
-- **Node.js** com **Express**.
-- **MySQL (mysql2)** para o banco de dados relacional.
-- **JWT (JSON Web Tokens)** para proteção e autenticação de rotas API.
-- **Bcrypt** para hash de senhas.
-- **UUID** para identificadores únicos e seguros.
+### � Registrar Vendas sem Complicação
+- Um passo a passo super intuitivo: escolha o produto, selecione a unidade exata que está sendo vendida e confirme o valor.
+- O sistema já calcula o seu lucro na hora!
+
+### � Consultar o Histórico
+- Uma lista completa de tudo que já foi vendido, com filtros práticos. Busque pelo nome do produto, data ou valor.
+
+### 🎨 Trabalhar com Conforto (Modo Escuro)
+- Gosta de trabalhar à noite ou prefere telas mais escuras? O Revenda Smart possui um **Dark Mode** (Modo Escuro) lindo e confortável para os olhos, que se adapta à sua preferência.
 
 ---
 
-## 🚀 Como Executar o Projeto
+## 💻 Para os Desenvolvedores (Como rodar o projeto)
 
-Siga as instruções abaixo para configurar e rodar o Revenda Smart na sua máquina local:
+Se você é desenvolvedor e quer testar ou contribuir com o projeto, a arquitetura é dividida em **Frontend (React)** e **Backend (Node.js)**. 
 
-### 1️⃣ Pré-requisitos
-- Node.js instalado (versão 18+ recomendada)
-- MySQL Server rodando
-- Git (opcional, para clonar)
+### O que usamos (Tech Stack)
+- **Visual:** React 19, Vite, Tailwind CSS v4, gráficos com Recharts e ícones do Lucide React.
+- **Motor (API):** Node.js com Express, banco de dados MySQL (via `mysql2`), segurança com JWT e Bcrypt.
 
-### 2️⃣ Clonando o repositório
+### Como rodar na sua máquina
+
+**1. Baixe o projeto**
 ```bash
 git clone https://github.com/SEU_USUARIO/revenda-smart.git
 cd revenda-smart
 ```
 
-### 3️⃣ Configurando o Banco de Dados
-Abra o seu cliente MySQL (ex: MySQL Workbench, DBeaver ou terminal) e execute o script SQL que se encontra na raiz do projeto:
-```bash
-# Execute o arquivo database_schema.sql
-```
-Certifique-se de configurar as credenciais do banco corretamente no Backend.
+**2. Prepare o Banco de Dados**
+Você vai precisar do MySQL instalado. Basta rodar o arquivo `database_schema.sql` (que está na raiz do projeto) no seu gerenciador de banco de dados preferido para criar as tabelas.
 
-### 4️⃣ Configurando o Backend (API)
-Navegue até a pasta do backend, instale as dependências e crie um arquivo `.env`:
+**3. Configure a API (Backend)**
+Abra o terminal, entre na pasta do backend e instale as dependências:
 ```bash
 cd backend
 npm install
 ```
-Crie um arquivo `.env` na pasta `backend` baseado no `.env.example` e coloque suas variáveis:
+Crie um arquivo chamado `.env` na pasta `backend` e preencha com seus dados do banco (use o `.env.example` como base, se houver, ou cole o texto abaixo):
 ```env
 PORT=3000
 DB_HOST=localhost
 DB_USER=root
 DB_PASSWORD=sua_senha
 DB_NAME=revenda_smart_db
-JWT_SECRET=uma_chave_secreta_muito_forte
+JWT_SECRET=uma_chave_secreta_sua
 ```
 
-### 5️⃣ Configurando o Frontend
-Abra um novo terminal na raiz do projeto (`cd revenda-smart`) e instale as dependências:
+**4. Configure o Visual (Frontend)**
+Volte para a pasta principal do projeto e instale as dependências:
 ```bash
+# Na pasta raiz (revenda-smart)
 npm install
 ```
 
-### 6️⃣ Iniciando o Sistema
-Com o script que configuramos no pacote principal, você pode iniciar o Backend e o Frontend ao mesmo tempo!
-
-Na raiz do projeto, execute:
+**5. Tudo pronto! Hora de rodar 🚀**
+Com um único comando na pasta raiz do projeto, você inicia tanto a API quanto a interface visual:
 ```bash
 npm run dev
 ```
-
-* O **Frontend** iniciará na porta padrão do Vite (geralmente `http://localhost:5173`).
-* O **Backend** iniciará na porta configurada (ex: `http://localhost:3000`).
+- Acesse o sistema pelo navegador em: `http://localhost:5173`
 
 ---
 
-## 🎨 Estrutura de Diretórios Básica
+## 🤝 Quer ajudar a melhorar?
 
-```text
-/revenda-smart
-├── /backend            # Código fonte da API em Node.js (Rotas, Controllers, Middleware)
-├── /src                # Código fonte do Frontend em React (Componentes, Páginas, Contexto)
-├── /public             # Arquivos públicos (favicon, etc)
-├── database_schema.sql # Script para criação ds tabelas no banco de dados
-├── package.json        # Arquivo de configuração de scripts para rodar tudo
-└── README.md           # Você está aqui!
-```
+Achou um bug? Tem uma ideia genial para uma nova funcionalidade? 
+Sinta-se à vontade para abrir uma **Issue** ou enviar um **Pull Request**. Toda ajuda é super bem-vinda!
 
 ---
 
-## 🤝 Contribuição
-Se você deseja contribuir para o **Revenda Smart**, sinta-se livre para abrir uma **Issue** relatando bugs ou sugerindo novas funcionalidades. Pull Requests são muito bem-vindos!
-
----
-*Feito com ❤️ para facilitar a vida do revendedor.*
+💡 *Feito com ❤️ para descomplicar a vida de quem faz o próprio negócio acontecer.*
