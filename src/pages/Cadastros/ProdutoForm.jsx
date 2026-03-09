@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../contexts/DataContext';
 import { useToast } from '../../components/Toast';
+import InlineCreate from '../../components/InlineCreate';
 import { Save, ArrowLeft, Image as ImageIcon, X, Loader2 } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
 const ProdutoForm = () => {
-    const { produtos, adicionarProduto, atualizarProduto, categorias } = useData();
+    const { produtos, adicionarProduto, atualizarProduto, categorias, adicionarCategoria } = useData();
     const navigate = useNavigate();
     const { id } = useParams();
     const isEditing = !!id;
@@ -104,7 +105,14 @@ const ProdutoForm = () => {
                         </div>
 
                         <div className="form-group">
-                            <label className="label">Categoria</label>
+                            <div className="flex items-center justify-between mb-1.5">
+                                <label className="label mb-0">Categoria</label>
+                                <InlineCreate
+                                    label="Categoria"
+                                    onSave={adicionarCategoria}
+                                    onCreated={(item) => setFormData(prev => ({ ...prev, categoria: item.nome }))}
+                                />
+                            </div>
                             <select required className="select"
                                 value={formData.categoria}
                                 onChange={e => setFormData({ ...formData, categoria: e.target.value })}>

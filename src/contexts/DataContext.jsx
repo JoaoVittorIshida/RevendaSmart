@@ -168,8 +168,10 @@ export const DataProvider = ({ children }) => {
             if (res.ok) {
                 const novo = await res.json();
                 setState(prev => [...prev, novo]);
+                return novo; // retorna o item para auto-seleção
             }
         } catch (error) { console.error(error); }
+        return null;
     };
 
     const deleteAux = async (endpoint, id, setState) => {

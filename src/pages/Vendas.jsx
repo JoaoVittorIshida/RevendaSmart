@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useData } from '../contexts/DataContext';
 import { useToast } from '../components/Toast';
+import InlineCreate from '../components/InlineCreate';
 import { ShoppingCart, Check, ArrowLeft, Package } from 'lucide-react';
 
 const Vendas = () => {
-    const { produtos, itensEstoque, canaisVenda, venderItem } = useData();
+    const { produtos, itensEstoque, canaisVenda, venderItem, adicionarCanalVenda } = useData();
     const toast = useToast();
 
     const [step, setStep] = useState(1);
@@ -217,7 +218,14 @@ const Vendas = () => {
                             </div>
 
                             <div>
-                                <label className="label">Canal de Venda</label>
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <label className="label mb-0">Canal de Venda</label>
+                                    <InlineCreate
+                                        label="Canal de Venda"
+                                        onSave={adicionarCanalVenda}
+                                        onCreated={(item) => setSaleData(prev => ({ ...prev, canalVendaId: item.id }))}
+                                    />
+                                </div>
                                 <select
                                     required
                                     className="select"

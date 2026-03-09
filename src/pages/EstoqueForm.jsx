@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useData } from '../contexts/DataContext';
 import { useToast } from '../components/Toast';
+import InlineCreate from '../components/InlineCreate';
 import { Save, ArrowLeft, ArrowDownRight, Search, ChevronDown, Check } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -72,8 +73,8 @@ const SearchableSelect = ({ options, value, onChange, placeholder, isLoading }) 
                                     key={opt.value}
                                     onClick={() => { onChange(opt.value); setIsOpen(false); setSearchTerm(''); }}
                                     className={`px-4 py-2.5 text-sm cursor-pointer transition-colors flex items-center justify-between ${opt.value === value
-                                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium'
-                                            : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
+                                        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium'
+                                        : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
                                         }`}
                                 >
                                     {opt.label}
@@ -90,7 +91,7 @@ const SearchableSelect = ({ options, value, onChange, placeholder, isLoading }) 
 
 /* ── EstoqueForm ───────────────────────────────────────────── */
 const EstoqueForm = () => {
-    const { produtos, canaisCompra, adicionarEstoqueEmLote } = useData();
+    const { produtos, canaisCompra, adicionarEstoqueEmLote, adicionarCanalCompra } = useData();
     const navigate = useNavigate();
     const toast = useToast();
     const [loading, setLoading] = useState(false);
@@ -199,8 +200,15 @@ const EstoqueForm = () => {
                         </div>
 
                         {/* Canal de compra */}
-                        <div className="form-group">
-                            <label className="label">Canal de Compra</label>
+                        <div className="form-group lg:col-span-2">
+                            <div className="flex items-center justify-between mb-1.5">
+                                <label className="label mb-0">Canal de Compra</label>
+                                <InlineCreate
+                                    label="Canal de Compra"
+                                    onSave={adicionarCanalCompra}
+                                    onCreated={(item) => setFormData(prev => ({ ...prev, canalCompraId: item.id }))}
+                                />
+                            </div>
                             <select
                                 required className="select"
                                 value={formData.canalCompraId}
