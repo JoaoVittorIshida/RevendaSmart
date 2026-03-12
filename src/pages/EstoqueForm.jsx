@@ -105,22 +105,54 @@ const EstoqueForm = () => {
         origem: 'importado'
     });
 
-    // Cálculo dinâmico
-    useEffect(() => {
-        setFormData(prev => {
-            if (prev.quantidade && prev.custoUnitario !== '') {
-                const novoTotal = Number(prev.quantidade) * Number(prev.custoUnitario);
-                if (novoTotal !== Number(prev.custoTotal)) return { ...prev, custoTotal: novoTotal };
-            }
-            return prev;
-        });
-    }, [formData.quantidade, formData.custoUnitario]);
+    // Helper para limitar a 2 decimais no input
+    const formatarDecimal = (valor) => {
+        if (!valor && valor !== 0) return '';
+        const str = valor.toString();
+        if (str.includes('.')) {
+            const [inteiro, decimal] = str.split('.');
+            if (decimal.length > 2) return `${inteiro}.${decimal.slice(0, 2)}`;
+        }
+        return str;
+    };
 
-    const handleTotalChange = (novoTotal) => {
-        if (novoTotal === '') { setFormData({ ...formData, custoTotal: '', custoUnitario: '' }); return; }
-        const total = Number(novoTotal);
-        const qtd = Number(formData.quantidade) || 1;
-        setFormData({ ...formData, custoTotal: novoTotal, custoUnitario: total / qtd });
+    const handleQtdChange = (val) => {
+        const qtd = Number(val);
+        setFormData(prev => {
+            let novoTotal = prev.custoTotal;
+            if (prev.custoUnitario !== '') {
+                novoTotal = parseFloat((qtd * Number(prev.custoUnitario)).toFixed(2));
+            }
+            return { ...prev, quantidade: qtd, custoTotal: novoTotal };
+        });
+    };
+
+    const handleUnitarioChange = (val) => {
+        const formatado = formatarDecimal(val);
+        setFormData(prev => {
+            let novoTotal = prev.custoTotal;
+            if (formatado !== '') {
+                // Ao editar unitário, recalculamos o total
+                novoTotal = parseFloat(((Number(prev.quantidade) || 1) * Number(formatado)).toFixed(2));
+            } else {
+                novoTotal = '';
+            }
+            return { ...prev, custoUnitario: formatado, custoTotal: novoTotal };
+        });
+    };
+
+    const handleTotalChange = (val) => {
+        const formatado = formatarDecimal(val);
+        setFormData(prev => {
+            if (formatado === '') { 
+                return { ...prev, custoTotal: '', custoUnitario: '' }; 
+            }
+            const total = Number(formatado);
+            const qtd = Number(prev.quantidade) || 1;
+            // Ao editar total, recalculamos o unitário arredondando
+            const novoUnitario = parseFloat((total / qtd).toFixed(2));
+            return { ...prev, custoTotal: formatado, custoUnitario: novoUnitario };
+        });
     };
 
     const handleSubmit = async (e) => {
@@ -171,7 +203,7 @@ const EstoqueForm = () => {
                                 type="number" min="1"
                                 className="input text-center font-bold text-lg"
                                 value={formData.quantidade}
-                                onChange={e => setFormData({ ...formData, quantidade: Number(e.target.value) })}
+                                onChange={e => handleQtdChange(e.target.value)}
                             />
                         </div>
 
@@ -183,7 +215,13 @@ const EstoqueForm = () => {
                                 className="input"
                                 placeholder="0.00"
                                 value={formData.custoUnitario}
-                                onChange={e => setFormData({ ...formData, custoUnitario: e.target.value })}
+                                onChange={e => handleUnitarioChange(e.target.value)}
+                                onBlur={e => {
+                                    if(e.target.value) {
+                                        const val = parseFloat(Number(e.target.value).toFixed(2));
+                                        handleUnitarioChange(val.toString());
+                                    }
+                                }}
                             />
                         </div>
 
@@ -196,6 +234,12 @@ const EstoqueForm = () => {
                                 placeholder="0.00"
                                 value={formData.custoTotal}
                                 onChange={e => handleTotalChange(e.target.value)}
+                                onBlur={e => {
+                                    if(e.target.value) {
+                                        const val = parseFloat(Number(e.target.value).toFixed(2));
+                                        handleTotalChange(val.toString());
+                                    }
+                                }}
                             />
                         </div>
 
