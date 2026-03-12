@@ -208,6 +208,22 @@
     font-family: inherit;
   }
 
+  .date-input {
+    color-scheme: light;
+  }
+
+  .date-input::-webkit-calendar-picker-indicator {
+    opacity: 0;
+  }
+
+  .date-input::-moz-calendar-picker-indicator {
+    opacity: 0;
+  }
+
+  .dark .date-input {
+    color-scheme: dark;
+  }
+
   .input-error {
     @apply border-red-400 bg-red-50 focus:border-red-500 focus:ring-red-500/20 dark:border-red-600 dark:bg-red-900/20 dark:focus:border-red-500;
   }

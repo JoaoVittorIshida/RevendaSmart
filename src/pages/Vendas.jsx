@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useData } from '../contexts/DataContext';
 import { useToast } from '../components/Toast';
 import InlineCreate from '../components/InlineCreate';
-import { ShoppingCart, Check, ArrowLeft, Package } from 'lucide-react';
+import { ShoppingCart, Check, ArrowLeft, Package, Calendar } from 'lucide-react';
 
 const Vendas = () => {
     const { produtos, itensEstoque, canaisVenda, venderItem, adicionarCanalVenda } = useData();
@@ -11,6 +11,7 @@ const Vendas = () => {
     const [step, setStep] = useState(1);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [selectedUnit, setSelectedUnit] = useState(null);
+    const saleDateRef = useRef(null);
 
     const getLocalDate = () => {
         const d = new Date();
@@ -237,15 +238,30 @@ const Vendas = () => {
                                 </select>
                             </div>
 
-                            <div>
+                            <div className="relative">
                                 <label className="label">Data da Venda</label>
                                 <input
                                     required
                                     type="date"
-                                    className="input"
+                                    className="input pr-12 date-input"
+                                    ref={saleDateRef}
                                     value={saleData.dataVenda}
                                     onChange={e => setSaleData({ ...saleData, dataVenda: e.target.value })}
                                 />
+                                <button
+                                    type="button"
+                                    aria-label="Abrir calendario"
+                                    onClick={() => {
+                                        if (saleDateRef.current?.showPicker) {
+                                            saleDateRef.current.showPicker();
+                                            return;
+                                        }
+                                        saleDateRef.current?.focus();
+                                    }}
+                                    className="absolute right-3 top-[2.15rem] flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-slate-100 dark:hover:bg-slate-700"
+                                >
+                                    <Calendar size={18} />
+                                </button>
                             </div>
 
                             <button type="submit" className="btn btn-success w-full py-3 text-base mt-2">
