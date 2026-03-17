@@ -122,9 +122,8 @@ const PieCustomTooltip = ({ active, payload }) => {
 
 /* ─── Dashboard ────────────────────────────────────────────── */
 const Dashboard = () => {
-    const { itensEstoque, produtos, canaisVenda, formatDate } = useData();
+    const { itensEstoque, produtos, canaisVenda, formatDate, isLoading } = useData();
     const [periodo, setPeriodo] = useState('total');
-    const isLoading = itensEstoque.length === 0 && produtos.length === 0;
 
     const dadosCalculados = useMemo(() => {
         const hoje = new Date();
@@ -221,18 +220,24 @@ const Dashboard = () => {
             </div>
 
             {/* Charts Row */}
-            {dadosCalculados.areaData.length > 0 && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-
-                    {/* Area Chart */}
-                    <div className="card lg:col-span-2 p-0 overflow-hidden">
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-                            <h2 className="section-heading">
-                                <TrendingUp size={18} className="text-blue-500" />
-                                Evolução de Receita e Lucro
-                            </h2>
-                        </div>
-                        <div className="p-4 pt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                
+                {/* Area Chart */}
+                <div className="card lg:col-span-2 p-0 overflow-hidden flex flex-col">
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                        <h2 className="section-heading">
+                            <TrendingUp size={18} className="text-blue-500" />
+                            Evolução de Receita e Lucro
+                        </h2>
+                    </div>
+                    <div className="p-4 pt-6 flex-1 flex flex-col justify-center">
+                        {dadosCalculados.areaData.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-[220px] text-slate-400">
+                                <TrendingUp size={32} className="mb-2 opacity-50" />
+                                <p className="text-sm font-medium">Sem dados no período</p>
+                                <p className="text-xs mt-1">Nenhuma venda registrada.</p>
+                            </div>
+                        ) : (
                             <ResponsiveContainer width="100%" height={220}>
                                 <AreaChart data={dadosCalculados.areaData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                                     <defs>
@@ -253,42 +258,50 @@ const Dashboard = () => {
                                     <Area type="monotone" dataKey="lucro" name="Lucro" stroke="#22c55e" strokeWidth={2.5} fill="url(#gradLucro)" dot={false} activeDot={{ r: 4, fill: '#22c55e' }} />
                                 </AreaChart>
                             </ResponsiveContainer>
-                        </div>
+                        )}
                     </div>
-
-                    {/* Donut Chart */}
-                    <div className="card p-0 overflow-hidden">
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-                            <h2 className="section-heading">
-                                <ShoppingBag size={18} className="text-purple-500" />
-                                Vendas por Canal
-                            </h2>
-                        </div>
-                        <div className="p-4 flex flex-col items-center">
-                            <ResponsiveContainer width="100%" height={160}>
-                                <PieChart>
-                                    <Pie
-                                        data={dadosCalculados.pieData}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={48}
-                                        outerRadius={72}
-                                        paddingAngle={3}
-                                        dataKey="value"
-                                    >
-                                        {dadosCalculados.pieData.map((_, i) => (
-                                            <Cell key={i} fill={CANAL_COLORS[i % CANAL_COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <RechartsTooltip content={<PieCustomTooltip />} />
-                                </PieChart>
-                            </ResponsiveContainer>
-                            <PieLegend payload={dadosCalculados.pieData.map((d, i) => ({ value: d.name, color: CANAL_COLORS[i % CANAL_COLORS.length] }))} />
-                        </div>
-                    </div>
-
                 </div>
-            )}
+
+                {/* Donut Chart */}
+                <div className="card p-0 overflow-hidden flex flex-col">
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                        <h2 className="section-heading">
+                            <ShoppingBag size={18} className="text-purple-500" />
+                            Vendas por Canal
+                        </h2>
+                    </div>
+                    <div className="p-4 flex-1 flex flex-col items-center justify-center">
+                        {dadosCalculados.pieData.length === 0 ? (
+                             <div className="flex flex-col items-center justify-center h-[160px] text-slate-400">
+                                <ShoppingBag size={32} className="mb-2 opacity-50" />
+                                <p className="text-sm font-medium">Sem dados no período</p>
+                            </div>
+                        ) : (
+                            <>
+                                <ResponsiveContainer width="100%" height={160}>
+                                    <PieChart>
+                                        <Pie
+                                            data={dadosCalculados.pieData}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={48}
+                                            outerRadius={72}
+                                            paddingAngle={3}
+                                            dataKey="value"
+                                        >
+                                            {dadosCalculados.pieData.map((_, i) => (
+                                                <Cell key={i} fill={CANAL_COLORS[i % CANAL_COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <RechartsTooltip content={<PieCustomTooltip />} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                                <PieLegend payload={dadosCalculados.pieData.map((d, i) => ({ value: d.name, color: CANAL_COLORS[i % CANAL_COLORS.length] }))} />
+                            </>
+                        )}
+                    </div>
+                </div>
+            </div>
 
             {/* Recent Sales */}
             <div className="card p-0 overflow-hidden">

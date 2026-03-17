@@ -15,6 +15,7 @@ export const DataProvider = ({ children }) => {
     const [categorias, setCategorias] = useState([]);
     const [canaisVenda, setCanaisVenda] = useState([]);
     const [canaisCompra, setCanaisCompra] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     // Helper para requisições com Auth via Cookie
     const authFetch = useCallback(async (endpoint, options = {}) => {
@@ -41,6 +42,7 @@ export const DataProvider = ({ children }) => {
 
     const fetchData = useCallback(async () => {
         if (!usuario) return;
+        setIsLoading(true);
 
         try {
             const [resProd, resEstoque, resCat, resCanalV, resCanalC] = await Promise.all([
@@ -59,6 +61,8 @@ export const DataProvider = ({ children }) => {
 
         } catch (error) {
             console.error("Erro ao carregar dados:", error);
+        } finally {
+            setIsLoading(false);
         }
     }, [authFetch, usuario]);
 
@@ -72,6 +76,7 @@ export const DataProvider = ({ children }) => {
             setCategorias([]);
             setCanaisVenda([]);
             setCanaisCompra([]);
+            setIsLoading(false);
         }
     }, [usuario, fetchData]);
 
@@ -226,6 +231,7 @@ export const DataProvider = ({ children }) => {
         categorias,
         canaisVenda,
         canaisCompra,
+        isLoading,
         adicionarProduto,
         atualizarProduto,
         removerProduto,
