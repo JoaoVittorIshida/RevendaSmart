@@ -155,12 +155,26 @@ const EstoqueForm = () => {
         });
     };
 
+    const MAX_QUANTIDADE = 500;
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (formData.quantidade < 1 || formData.quantidade > MAX_QUANTIDADE) {
+            toast.error('Quantidade inválida', `O limite é de ${MAX_QUANTIDADE} itens por entrada.`);
+            return;
+        }
+
         setLoading(true);
-        await adicionarEstoqueEmLote({ ...formData, precoCusto: Number(formData.custoUnitario) });
-        toast.success('Estoque registrado!', 'A movimentação foi salva com sucesso.');
-        navigate('/estoque');
+        const resultado = await adicionarEstoqueEmLote({ ...formData, precoCusto: Number(formData.custoUnitario) });
+
+        if (resultado.ok) {
+            toast.success('Estoque registrado!', 'A movimentação foi salva com sucesso.');
+            navigate('/estoque');
+        } else {
+            toast.error('Erro ao registrar', resultado.message);
+            setLoading(false);
+        }
     };
 
     const productOptions = produtos.map(p => ({ value: p.id, label: `${p.nome} - ${p.marca}` }));

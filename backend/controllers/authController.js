@@ -68,7 +68,8 @@ const login = async (req, res) => {
                 id: user.id,
                 nome: user.nome,
                 usuario: user.usuario
-            }
+            },
+            token // para uso via Authorization header em CI/CD e testes de API
         });
 
     } catch (error) {

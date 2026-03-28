@@ -128,8 +128,14 @@ export const DataProvider = ({ children }) => {
                 // Como gera muitos IDs, recarregamos o estoque para simplificar
                 const resEstoque = await authFetch('/estoque');
                 if (resEstoque.ok) setItensEstoque(await resEstoque.json());
+                return { ok: true };
             }
-        } catch (error) { console.error(error); }
+            const data = await res.json().catch(() => ({}));
+            return { ok: false, message: data.message || 'Erro ao adicionar ao estoque.' };
+        } catch (error) {
+            console.error(error);
+            return { ok: false, message: 'Erro de conexão com o servidor.' };
+        }
     };
 
     const venderItem = async (id, dadosVenda) => {

@@ -29,6 +29,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
+const csrfGuard = require('./middleware/csrfMiddleware');
+app.use(csrfGuard);
+
 // Routes
 const authRoutes = require('./routes/authRoutes');
 const productsRoutes = require('./routes/productsRoutes');

@@ -39,10 +39,16 @@ const getStock = async (req, res) => {
     }
 };
 
+const MAX_QUANTIDADE = 500;
+
 const addStockBatch = async (req, res) => {
     try {
         const { produtoId, quantidade, precoCusto, canalCompraId, origem } = req.body;
         const userId = req.user.id;
+
+        if (!Number.isInteger(quantidade) || quantidade < 1 || quantidade > MAX_QUANTIDADE) {
+            return res.status(400).json({ message: `Quantidade deve ser um número inteiro entre 1 e ${MAX_QUANTIDADE}.` });
+        }
 
         // Verificar se produto pertence ao usuário
         const [prodCheck] = await db.query('SELECT * FROM produtos WHERE id = ? AND usuario_id = ?', [produtoId, userId]);

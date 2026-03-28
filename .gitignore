@@ -14,7 +14,9 @@ dist-ssr
 .env
 .env.*
 !.env.example
-
+.claude
+CLAUDE.md
+SECURITY_REPORT.md
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

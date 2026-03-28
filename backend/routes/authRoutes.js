@@ -8,7 +8,14 @@ const loginLimiter = rateLimit({
     max: 15, // Aumentado para 15 (conta requisições OPTIONS do CORS também)
     message: { message: 'Muitas tentativas de login. Tente novamente após 15 minutos.' }
 });
-router.post('/register', authController.register);
+
+const registerLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hora
+    max: 10,
+    message: { message: 'Muitos cadastros realizados. Tente novamente após 1 hora.' }
+});
+
+router.post('/register', registerLimiter, authController.register);
 router.post('/login', loginLimiter, authController.login);
 router.get('/verify', authController.verifySession);
 router.post('/logout', authController.logout);
