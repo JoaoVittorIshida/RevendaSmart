@@ -3,6 +3,7 @@ import { useData } from '../contexts/DataContext';
 import { useToast } from '../components/Toast';
 import InlineCreate from '../components/InlineCreate';
 import { Save, ArrowLeft, ArrowDownRight, Search, ChevronDown, Check } from 'lucide-react';
+import { formatarMoeda, parsearMoeda, centavosParaReais } from '../utils/currency';
 import { Link, useNavigate } from 'react-router-dom';
 
 /* ── Searchable Select ─────────────────────────────────────── */
@@ -99,59 +100,39 @@ const EstoqueForm = () => {
     const [formData, setFormData] = useState({
         produtoId: '',
         quantidade: 1,
-        custoUnitario: '',
-        custoTotal: '',
+        custoUnitario: 0,
+        custoTotal: 0,
         canalCompraId: '',
         origem: 'importado'
     });
 
-    // Helper para limitar a 2 decimais no input
-    const formatarDecimal = (valor) => {
-        if (!valor && valor !== 0) return '';
-        const str = valor.toString();
-        if (str.includes('.')) {
-            const [inteiro, decimal] = str.split('.');
-            if (decimal.length > 2) return `${inteiro}.${decimal.slice(0, 2)}`;
-        }
-        return str;
-    };
-
     const handleQtdChange = (val) => {
         const qtd = Number(val);
-        setFormData(prev => {
-            let novoTotal = prev.custoTotal;
-            if (prev.custoUnitario !== '') {
-                novoTotal = parseFloat((qtd * Number(prev.custoUnitario)).toFixed(2));
-            }
-            return { ...prev, quantidade: qtd, custoTotal: novoTotal };
-        });
+        setFormData(prev => ({
+            ...prev,
+            quantidade: qtd,
+            custoTotal: prev.custoUnitario > 0 ? prev.custoUnitario * qtd : 0,
+        }));
     };
 
     const handleUnitarioChange = (val) => {
-        const formatado = formatarDecimal(val);
-        setFormData(prev => {
-            let novoTotal = prev.custoTotal;
-            if (formatado !== '') {
-                // Ao editar unitário, recalculamos o total
-                novoTotal = parseFloat(((Number(prev.quantidade) || 1) * Number(formatado)).toFixed(2));
-            } else {
-                novoTotal = '';
-            }
-            return { ...prev, custoUnitario: formatado, custoTotal: novoTotal };
-        });
+        const centavos = parsearMoeda(val);
+        setFormData(prev => ({
+            ...prev,
+            custoUnitario: centavos,
+            custoTotal: centavos > 0 ? centavos * (Number(prev.quantidade) || 1) : 0,
+        }));
     };
 
     const handleTotalChange = (val) => {
-        const formatado = formatarDecimal(val);
+        const centavos = parsearMoeda(val);
         setFormData(prev => {
-            if (formatado === '') { 
-                return { ...prev, custoTotal: '', custoUnitario: '' }; 
-            }
-            const total = Number(formatado);
             const qtd = Number(prev.quantidade) || 1;
-            // Ao editar total, recalculamos o unitário arredondando
-            const novoUnitario = parseFloat((total / qtd).toFixed(2));
-            return { ...prev, custoTotal: formatado, custoUnitario: novoUnitario };
+            return {
+                ...prev,
+                custoTotal: centavos,
+                custoUnitario: centavos > 0 ? Math.round(centavos / qtd) : 0,
+            };
         });
     };
 
@@ -166,7 +147,7 @@ const EstoqueForm = () => {
         }
 
         setLoading(true);
-        const resultado = await adicionarEstoqueEmLote({ ...formData, precoCusto: Number(formData.custoUnitario) });
+        const resultado = await adicionarEstoqueEmLote({ ...formData, precoCusto: centavosParaReais(formData.custoUnitario) });
 
         if (resultado.ok) {
             toast.success('Estoque registrado!', 'A movimentação foi salva com sucesso.');
@@ -225,17 +206,12 @@ const EstoqueForm = () => {
                         <div className="form-group">
                             <label className="label">Custo Unitário (R$)</label>
                             <input
-                                type="number" step="0.01"
+                                type="text"
+                                inputMode="numeric"
                                 className="input"
-                                placeholder="0.00"
-                                value={formData.custoUnitario}
+                                placeholder="0,00"
+                                value={formatarMoeda(formData.custoUnitario)}
                                 onChange={e => handleUnitarioChange(e.target.value)}
-                                onBlur={e => {
-                                    if(e.target.value) {
-                                        const val = parseFloat(Number(e.target.value).toFixed(2));
-                                        handleUnitarioChange(val.toString());
-                                    }
-                                }}
                             />
                         </div>
 
@@ -243,17 +219,12 @@ const EstoqueForm = () => {
                         <div className="form-group">
                             <label className="label text-blue-600 dark:text-blue-400">Custo Total da Compra (R$)</label>
                             <input
-                                type="number" step="0.01"
+                                type="text"
+                                inputMode="numeric"
                                 className="input border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-300 font-semibold"
-                                placeholder="0.00"
-                                value={formData.custoTotal}
+                                placeholder="0,00"
+                                value={formatarMoeda(formData.custoTotal)}
                                 onChange={e => handleTotalChange(e.target.value)}
-                                onBlur={e => {
-                                    if(e.target.value) {
-                                        const val = parseFloat(Number(e.target.value).toFixed(2));
-                                        handleTotalChange(val.toString());
-                                    }
-                                }}
                             />
                         </div>
 

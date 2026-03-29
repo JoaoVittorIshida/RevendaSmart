@@ -3,6 +3,7 @@ import { useData } from '../contexts/DataContext';
 import { useToast } from '../components/Toast';
 import InlineCreate from '../components/InlineCreate';
 import { ShoppingCart, Check, ArrowLeft, Package, Calendar } from 'lucide-react';
+import { formatarMoeda, parsearMoeda, centavosParaReais } from '../utils/currency';
 
 const Vendas = () => {
     const { produtos, itensEstoque, canaisVenda, venderItem, adicionarCanalVenda } = useData();
@@ -19,7 +20,7 @@ const Vendas = () => {
     };
 
     const [saleData, setSaleData] = useState({
-        precoVenda: '',
+        precoVenda: 0,
         canalVendaId: '',
         dataVenda: getLocalDate()
     });
@@ -33,7 +34,7 @@ const Vendas = () => {
         : [];
 
     const handleProductSelect = (prod) => { setSelectedProduct(prod); setStep(2); };
-    const handleUnitSelect = (unit) => { setSelectedUnit(unit); setSaleData(prev => ({ ...prev, precoVenda: '' })); setStep(3); };
+    const handleUnitSelect = (unit) => { setSelectedUnit(unit); setSaleData(prev => ({ ...prev, precoVenda: 0 })); setStep(3); };
 
     const handleFinishSale = async (e) => {
         e.preventDefault();
@@ -44,7 +45,7 @@ const Vendas = () => {
         currentDate.setFullYear(year, month - 1, day);
 
         await venderItem(selectedUnit.id, {
-            precoVenda: Number(saleData.precoVenda),
+            precoVenda: centavosParaReais(saleData.precoVenda),
             canalVendaId: saleData.canalVendaId,
             dataVenda: currentDate.toISOString()
         });
@@ -57,7 +58,7 @@ const Vendas = () => {
         setStep(1);
         setSelectedProduct(null);
         setSelectedUnit(null);
-        setSaleData({ precoVenda: '', canalVendaId: '', dataVenda: getLocalDate() });
+        setSaleData({ precoVenda: 0, canalVendaId: '', dataVenda: getLocalDate() });
     };
 
     const steps = [
@@ -209,12 +210,12 @@ const Vendas = () => {
                                 <label className="label">Valor da Venda (R$)</label>
                                 <input
                                     required
-                                    type="number"
-                                    step="0.01"
+                                    type="text"
+                                    inputMode="numeric"
                                     className="input text-xl font-bold text-green-600 font-mono"
                                     placeholder="0,00"
-                                    value={saleData.precoVenda}
-                                    onChange={e => setSaleData({ ...saleData, precoVenda: e.target.value })}
+                                    value={formatarMoeda(saleData.precoVenda)}
+                                    onChange={e => setSaleData({ ...saleData, precoVenda: parsearMoeda(e.target.value) })}
                                 />
                             </div>
 
