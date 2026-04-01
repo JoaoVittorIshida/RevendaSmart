@@ -154,6 +154,35 @@ export const DataProvider = ({ children }) => {
         } catch (error) { console.error(error); }
     };
 
+    const cancelarVenda = async (id) => {
+        try {
+            const res = await authFetch(`/estoque/${id}/venda`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                setItensEstoque(prev => prev.map(item =>
+                    item.id === id
+                        ? {
+                            ...item,
+                            status: 'disponivel',
+                            precoVenda: null,
+                            canalVendaId: null,
+                            dataVenda: null
+                        }
+                        : item
+                ));
+                return { ok: true };
+            }
+
+            const data = await res.json().catch(() => ({}));
+            return { ok: false, message: data.message || 'Erro ao cancelar venda.' };
+        } catch (error) {
+            console.error(error);
+            return { ok: false, message: 'Erro de conexão com o servidor.' };
+        }
+    };
+
     const atualizarItemEstoque = async (id, dados) => {
         // Not implemented in backend yet
         console.warn("Update Stock not fully implemented via API yet");
@@ -164,8 +193,12 @@ export const DataProvider = ({ children }) => {
             const res = await authFetch(`/estoque/${id}`, { method: 'DELETE' });
             if (res.ok) {
                 setItensEstoque(prev => prev.filter(item => item.id !== id));
+                return { ok: true };
             }
+            const data = await res.json().catch(() => ({}));
+            return { ok: false, message: data.message || 'Erro ao remover item do estoque.' };
         } catch (error) { console.error(error); }
+        return { ok: false, message: 'Erro de conexão com o servidor.' };
     };
 
     // --- Actions: Auxiliares ---
@@ -243,6 +276,7 @@ export const DataProvider = ({ children }) => {
         removerProduto,
         adicionarEstoqueEmLote,
         venderItem,
+        cancelarVenda,
         atualizarItemEstoque,
         removerItemEstoque,
         adicionarCategoria,

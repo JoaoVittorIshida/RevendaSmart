@@ -1,13 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import { useData } from '../contexts/DataContext';
-import { FileText, Calendar, Search, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ChevronsUpDown } from 'lucide-react';
+import { useToast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
+import { FileText, Calendar, Search, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ChevronsUpDown, Trash2 } from 'lucide-react';
 
 const HistoricoVendas = () => {
-    const { vendas, formatDate } = useData();
+    const { vendas, formatDate, cancelarVenda } = useData();
+    const toast = useToast();
+    const confirm = useConfirm();
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [searchTerm, setSearchTerm] = useState('');
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'none' });
+    const [cancelingId, setCancelingId] = useState(null);
 
     if (!vendas) {
         return (
@@ -65,6 +70,29 @@ const HistoricoVendas = () => {
     const currentVendas = processedVendas.slice(indexOfFirstItem, indexOfLastItem);
 
     const handleSearch = (e) => { setSearchTerm(e.target.value); setCurrentPage(1); };
+
+    const handleCancelSale = async (venda) => {
+        const ok = await confirm({
+            title: 'Cancelar venda',
+            message: `Deseja cancelar a venda de "${venda.produto}"?`,
+            confirmLabel: 'Sim, cancelar',
+            cancelLabel: 'Não',
+            variant: 'danger',
+        });
+
+        if (!ok) return;
+
+        setCancelingId(venda.id);
+        const result = await cancelarVenda(venda.id);
+
+        if (result.ok) {
+            toast.success('Venda cancelada', `"${venda.produto}" voltou para o estoque disponível.`);
+        } else {
+            toast.error('Erro ao cancelar venda', result.message);
+        }
+
+        setCancelingId(null);
+    };
 
     /* ── sortable th class ── */
     const thSort = 'cursor-pointer group select-none hover:bg-slate-100/60 dark:hover:bg-slate-700/60 transition-colors';
@@ -144,6 +172,7 @@ const HistoricoVendas = () => {
                                     <th className={`text-right ${thSort}`} onClick={() => handleSort('valor')}>
                                         <div className="flex items-center justify-end gap-2">Valor de Venda <SortIcon columnKey="valor" /></div>
                                     </th>
+                                    <th className="text-center">Funções</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -163,6 +192,20 @@ const HistoricoVendas = () => {
                                         </td>
                                         <td className="text-right font-bold text-blue-600 dark:text-blue-400">
                                             R$ {venda.valor.toFixed(2)}
+                                        </td>
+                                        <td className="text-center">
+                                            <button
+                                                onClick={() => handleCancelSale(venda)}
+                                                disabled={cancelingId === venda.id}
+                                                className={`p-2 rounded-lg transition-colors ${cancelingId === venda.id
+                                                        ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
+                                                        : 'text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+                                                    }`}
+                                                title="Cancelar venda"
+                                                aria-label={`Cancelar venda de ${venda.produto}`}
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}

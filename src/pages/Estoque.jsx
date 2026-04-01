@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
 import { useData } from '../contexts/DataContext';
-import { Plus, Package, ChevronDown, Tag } from 'lucide-react';
+import { useToast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
+import { Plus, Package, ChevronDown, Tag, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Estoque = () => {
-    const { produtos, itensEstoque } = useData();
+    const { produtos, itensEstoque, removerItemEstoque } = useData();
+    const toast = useToast();
+    const confirm = useConfirm();
     const [produtoExpandido, setProdutoExpandido] = useState(null);
+    const [removendoItemId, setRemovendoItemId] = useState(null);
 
     const estoqueAgrupado = produtos.map(prod => {
         const itens = itensEstoque.filter(item => item.produtoId === prod.id && item.status === 'disponivel');
@@ -16,6 +21,29 @@ const Estoque = () => {
             custoTotalEstoque: itens.reduce((acc, item) => acc + item.precoCusto, 0)
         };
     }).sort((a, b) => b.qtdDisponivel - a.qtdDisponivel);
+
+    const handleDeleteItem = async (item, nomeProduto, indexExibicao) => {
+        const ok = await confirm({
+            title: 'Excluir unidade do estoque',
+            message: `Deseja excluir a unidade #${indexExibicao} de "${nomeProduto}"? Esta ação não pode ser desfeita.`,
+            confirmLabel: 'Excluir',
+            cancelLabel: 'Cancelar',
+            variant: 'danger',
+        });
+
+        if (!ok) return;
+
+        setRemovendoItemId(item.id);
+        const result = await removerItemEstoque(item.id);
+
+        if (result?.ok) {
+            toast.success('Unidade excluída', `"${nomeProduto}" foi atualizado no estoque.`);
+        } else {
+            toast.error('Erro ao excluir unidade', result?.message || 'Não foi possível excluir este item.');
+        }
+
+        setRemovendoItemId(null);
+    };
 
     return (
         <div className="container">
@@ -114,9 +142,23 @@ const Estoque = () => {
                                                         <span className="badge badge-blue">
                                                             {item.origem.charAt(0).toUpperCase() + item.origem.slice(1)}
                                                         </span>
-                                                        <span className="text-xs text-slate-400">
-                                                            {new Date(item.dataEntrada).toLocaleDateString('pt-BR')}
-                                                        </span>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs text-slate-400">
+                                                                {new Date(item.dataEntrada).toLocaleDateString('pt-BR')}
+                                                            </span>
+                                                            <button
+                                                                onClick={() => handleDeleteItem(item, prod.nome, idx + 1)}
+                                                                disabled={removendoItemId === item.id}
+                                                                className={`p-1.5 rounded-md transition-colors ${removendoItemId === item.id
+                                                                        ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
+                                                                        : 'text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+                                                                    }`}
+                                                                title="Excluir unidade"
+                                                                aria-label={`Excluir unidade #${idx + 1} de ${prod.nome}`}
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ))}

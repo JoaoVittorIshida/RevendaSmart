@@ -8,6 +8,7 @@ router.use(verifyToken);
 router.get('/', stockController.getStock);
 router.post('/entrada', stockController.addStockBatch);
 router.post('/:id/venda', stockController.sellItem);
+router.delete('/:id/venda', stockController.cancelSale);
 router.delete('/:id', stockController.deleteStockItem);
 
 module.exports = router;

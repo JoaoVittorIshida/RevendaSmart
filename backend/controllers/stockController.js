@@ -108,6 +108,38 @@ const sellItem = async (req, res) => {
     }
 };
 
+const cancelSale = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+
+        const [check] = await db.query(`
+            SELECT id, status FROM estoque
+            WHERE id = ? AND usuario_id = ?
+        `, [id, userId]);
+
+        if (check.length === 0) return res.status(404).json({ message: 'Item não encontrado.' });
+        if (check[0].status !== 'vendido') {
+            return res.status(400).json({ message: 'Apenas itens vendidos podem ter a venda cancelada.' });
+        }
+
+        await db.query(
+            `UPDATE estoque
+             SET status = 'disponivel',
+                 preco_venda = NULL,
+                 canal_venda_id = NULL,
+                 data_venda = NULL
+             WHERE id = ? AND usuario_id = ?`,
+            [id, userId]
+        );
+
+        res.json({ message: 'Venda cancelada com sucesso!' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Erro ao cancelar venda' });
+    }
+};
+
 const updateStockItem = async (req, res) => {
     // Implementar se necessário mudar preço custo ou origem
     res.status(501).json({ message: 'Not implemented' });
@@ -135,4 +167,4 @@ const deleteStockItem = async (req, res) => {
     }
 };
 
-module.exports = { getStock, addStockBatch, sellItem, deleteStockItem };
+module.exports = { getStock, addStockBatch, sellItem, cancelSale, deleteStockItem };
