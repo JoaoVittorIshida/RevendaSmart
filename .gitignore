@@ -16,6 +16,7 @@ dist-ssr
 !.env.example
 .claude
 CLAUDE.md
+AGENTS.md
 SECURITY_REPORT.md
 # Editor directories and files
 .vscode/*
