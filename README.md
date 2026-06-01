@@ -4,7 +4,7 @@ Bem-vindo(a) ao **Revenda Smart**! 🎉
 
 Este é um sistema de controle de vendas e estoque criado especialmente para **pequenos empreendedores, revendedores e importadores**. Se você compra produtos para revender e precisa de um lugar simples e bonito para organizar tudo, você está no lugar certo!
 
-Nosso objetivo é tirar você das planilhas complicadas e oferecer uma ferramenta visual, rápida e fácil de usar.
+Nosso objetivo é tirar você das planilhas complicadas e oferecer uma ferramenta visual, rápida e fácil de usar!
 
 ---
 
