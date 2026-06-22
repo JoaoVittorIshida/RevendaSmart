@@ -48,22 +48,31 @@ app.get('/', (req, res) => {
     res.json({ message: 'API RevendaSmart Online 🚀' });
 });
 
-// Rota de verificação de conexão com banco
-app.get('/api/status', async (req, res) => {
+const checkHealth = async (req, res) => {
     try {
         const [rows] = await db.query('SELECT 1 + 1 AS result');
         res.json({
             status: 'online',
-            database: 'conectado',
-            test_query: rows[0].result
+            api: 'online',
+            database: 'online',
+            test_query: rows[0].result,
+            checked_at: new Date().toISOString()
         });
     } catch (error) {
-        res.status(500).json({
-            status: 'erro',
-            database: error.message
+        res.status(503).json({
+            status: 'offline',
+            api: 'online',
+            database: 'offline',
+            message: 'Banco de dados indisponivel.',
+            error: error.message,
+            checked_at: new Date().toISOString()
         });
     }
-});
+};
+
+// Rota de verificacao de API + banco
+app.get('/api/health', checkHealth);
+app.get('/api/status', checkHealth);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

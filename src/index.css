@@ -285,7 +285,27 @@
   }
 
   .auth-card {
-    @apply bg-white rounded-2xl shadow-xl w-full max-w-sm border border-slate-200 overflow-hidden dark:bg-slate-800 dark:border-slate-700;
+    @apply relative bg-white rounded-2xl shadow-xl w-full max-w-sm border border-slate-200 overflow-hidden dark:bg-slate-800 dark:border-slate-700;
+  }
+
+  .auth-health-indicator {
+    @apply absolute top-4 right-4 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900/80 dark:ring-slate-700;
+  }
+
+  .auth-health-dot {
+    @apply h-3 w-3 rounded-full transition-colors duration-300;
+  }
+
+  .auth-health-dot-online {
+    @apply bg-green-500 shadow-[0_0_0_4px_rgba(34,197,94,0.14)];
+  }
+
+  .auth-health-dot-offline {
+    @apply bg-red-500 shadow-[0_0_0_4px_rgba(239,68,68,0.14)];
+  }
+
+  .auth-server-warning {
+    @apply mt-5 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-center text-xs font-semibold text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300;
   }
 
   .auth-header {

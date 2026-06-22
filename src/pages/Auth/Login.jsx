@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogIn, User, Lock, ArrowRight } from 'lucide-react';
+import { User, Lock } from 'lucide-react';
+import ApiHealthIndicator from '../../components/ApiHealthIndicator';
+import { useApiHealth } from '../../hooks/useApiHealth';
 
 const Login = () => {
     const { login, loading } = useAuth();
     const navigate = useNavigate();
+    const apiHealth = useApiHealth();
 
     const [formData, setFormData] = useState({
         usuario: '',
@@ -16,6 +19,11 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+
+        if (!apiHealth.isOnline) {
+            setError('Servidor iniciando. Aguarde alguns segundos e tente novamente.');
+            return;
+        }
 
         try {
             const result = await login(formData.usuario, formData.senha);
@@ -32,6 +40,7 @@ const Login = () => {
     return (
         <div className="auth-wrapper">
             <div className="auth-card">
+                <ApiHealthIndicator isOnline={apiHealth.isOnline} status={apiHealth.status} />
                 <div className="auth-header">
                     <div className="auth-brand-icon">
                         <span>RS</span>
@@ -82,9 +91,15 @@ const Login = () => {
                             </div>
                         </div>
 
+                        {!apiHealth.isOnline && (
+                            <div className="auth-server-warning">
+                                Servidor iniciando. O acesso sera liberado quando API e banco estiverem online.
+                            </div>
+                        )}
+
                         <button
                             type="submit"
-                            disabled={loading}
+                            disabled={loading || !apiHealth.isOnline}
                             className="auth-button"
                         >
                             {loading ? 'Entrando...' : 'Entrar'}

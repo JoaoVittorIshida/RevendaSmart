@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { UserPlus, User, Lock, Type, ArrowLeft } from 'lucide-react';
+import { User, Lock, Type, ArrowLeft } from 'lucide-react';
+import ApiHealthIndicator from '../../components/ApiHealthIndicator';
+import { useApiHealth } from '../../hooks/useApiHealth';
 
 const Cadastro = () => {
     const { registrar, loading } = useAuth();
     const navigate = useNavigate();
+    const apiHealth = useApiHealth();
 
     const [formData, setFormData] = useState({
         nome: '',
@@ -17,6 +20,11 @@ const Cadastro = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+
+        if (!apiHealth.isOnline) {
+            setError('Servidor iniciando. Aguarde alguns segundos e tente novamente.');
+            return;
+        }
 
         if (formData.senha.length < 4) {
             setError('A senha deve ter pelo menos 4 caracteres.');
@@ -38,6 +46,7 @@ const Cadastro = () => {
     return (
         <div className="auth-wrapper">
             <div className="auth-card">
+                <ApiHealthIndicator isOnline={apiHealth.isOnline} status={apiHealth.status} />
                 <div className="auth-header">
                     <Link to="/login" className="auth-back-link">
                         <ArrowLeft size={16} /> Voltar
@@ -105,9 +114,15 @@ const Cadastro = () => {
                             </div>
                         </div>
 
+                        {!apiHealth.isOnline && (
+                            <div className="auth-server-warning">
+                                Servidor iniciando. O cadastro sera liberado quando API e banco estiverem online.
+                            </div>
+                        )}
+
                         <button
                             type="submit"
-                            disabled={loading}
+                            disabled={loading || !apiHealth.isOnline}
                             className="auth-button"
                         >
                             {loading ? 'Cadastrando...' : 'Finalizar Cadastro'}
