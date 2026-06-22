@@ -90,4 +90,4 @@ Sinta-se à vontade para abrir uma **Issue** ou enviar um **Pull Request**. Toda
 
 ---
 
-💡 *Feito com ❤️ para descomplicar a vida de quem faz o próprio negócio acontecer.*
+💡 *Feito com ❤️ para descomplicar a vida de quem faz o próprio negócio acontecer!*
