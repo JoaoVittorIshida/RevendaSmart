@@ -36,6 +36,12 @@ test('expired reservations remain reserved until the user releases them', () => 
     assert.match(stockPage, /Liberar item/);
 });
 
+test('stock age filters parse labels such as 30+, 60+ and 90+ correctly', () => {
+    const stockPage = read('src', 'pages', 'Estoque.jsx');
+    assert.match(stockPage, /age >= Number\.parseInt\(filter, 10\)/);
+    assert.doesNotMatch(stockPage, /age >= Number\(filter\)/);
+});
+
 test('client data requests discard stale sessions and imports have a total-unit cap', () => {
     const dataContext = read('src', 'contexts', 'DataContext.jsx');
     const portability = read('backend', 'controllers', 'portabilityController.js');

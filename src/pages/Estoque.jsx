@@ -29,7 +29,7 @@ const Estoque = () => {
         const age = ageInDays(item.dataEntrada);
         if (filter === 'disponiveis') return item.status === 'disponivel';
         if (filter === 'reservados') return item.status === 'reservado';
-        if (filter.endsWith('+')) return item.status !== 'vendido' && age >= Number(filter);
+        if (filter.endsWith('+')) return item.status !== 'vendido' && age >= Number.parseInt(filter, 10);
         return item.status !== 'vendido';
     }), [filter, itensEstoque]);
     const invested = itensEstoque.filter((item) => item.status !== 'vendido').reduce((sum, item) => sum + item.precoCusto, 0);
