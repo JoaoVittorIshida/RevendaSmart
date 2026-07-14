@@ -42,6 +42,14 @@ test('stock age filters parse labels such as 30+, 60+ and 90+ correctly', () => 
     assert.doesNotMatch(stockPage, /age >= Number\(filter\)/);
 });
 
+test('sale completion uses an accessible detail switch and one calendar indicator', () => {
+    const salesPage = read('src', 'pages', 'Vendas.jsx');
+    assert.match(salesPage, /role="switch"/);
+    assert.match(salesPage, /aria-checked=\{details\}/);
+    assert.match(salesPage, /className="input date-input pr-11"/);
+    assert.match(salesPage, /pointer-events-none absolute right-3 bottom-3/);
+});
+
 test('client data requests discard stale sessions and imports have a total-unit cap', () => {
     const dataContext = read('src', 'contexts', 'DataContext.jsx');
     const portability = read('backend', 'controllers', 'portabilityController.js');
