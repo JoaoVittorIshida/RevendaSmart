@@ -14,9 +14,13 @@ const CrudBase = ({ title, items, onAdd, onRemove, backPath = '/cadastros' }) =>
         e.preventDefault();
         if (!novoItem.trim()) return;
         setLoading(true);
-        await onAdd(novoItem);
-        toast.success('Item adicionado!', `"${novoItem}" foi cadastrado.`);
-        setNovoItem('');
+        const result = await onAdd(novoItem);
+        if (result?.ok) {
+            toast.success('Item adicionado!', `"${novoItem}" foi cadastrado.`);
+            setNovoItem('');
+        } else {
+            toast.error('Nao foi possivel adicionar', result?.message || 'Tente novamente.');
+        }
         setLoading(false);
     };
 
@@ -28,8 +32,9 @@ const CrudBase = ({ title, items, onAdd, onRemove, backPath = '/cadastros' }) =>
             variant: 'danger',
         });
         if (ok) {
-            onRemove(item.id);
-            toast.success('Item removido', `"${item.nome}" foi removido com sucesso.`);
+            const result = await onRemove(item.id);
+            if (result?.ok) toast.success('Item removido', `"${item.nome}" foi removido com sucesso.`);
+            else toast.error('Nao foi possivel remover', result?.message || 'Tente novamente.');
         }
     };
 

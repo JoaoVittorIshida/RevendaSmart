@@ -4,7 +4,7 @@ const HEALTH_CHECK_INTERVAL_MS = 5 * 60 * 1000;
 const HEALTH_CHECK_RETRY_MS = 15000;
 const HEALTH_CHECK_TIMEOUT_MS = 10000;
 
-const getApiBaseUrl = () => import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const getApiBaseUrl = () => import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export const useApiHealth = () => {
     const [health, setHealth] = useState({
@@ -33,7 +33,7 @@ export const useApiHealth = () => {
             });
 
             return isOnline;
-        } catch (error) {
+        } catch {
             setHealth({
                 status: 'offline',
                 isOnline: false,

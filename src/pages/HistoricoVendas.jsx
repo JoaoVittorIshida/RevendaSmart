@@ -1,276 +1,63 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
+import { ArrowDown, ArrowUp, Calendar, ChevronLeft, ChevronRight, ChevronsUpDown, FileText, Search, Trash2 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
-import { FileText, Calendar, Search, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ChevronsUpDown, Trash2 } from 'lucide-react';
+
+const SortIcon = ({ active, direction }) => {
+    if (!active || direction === 'none') return <ChevronsUpDown size={14} className="text-slate-400 opacity-50" />;
+    return direction === 'asc' ? <ArrowUp size={14} className="text-blue-500" /> : <ArrowDown size={14} className="text-blue-500" />;
+};
 
 const HistoricoVendas = () => {
-    const { vendas, formatDate, cancelarVenda } = useData();
+    const { vendas, formatDate, cancelarVenda, isLoading } = useData();
     const toast = useToast();
     const confirm = useConfirm();
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [searchTerm, setSearchTerm] = useState('');
-    const [sortConfig, setSortConfig] = useState({ key: null, direction: 'none' });
+    const [sortConfig, setSortConfig] = useState({ key: 'data', direction: 'desc' });
     const [cancelingId, setCancelingId] = useState(null);
 
-    if (!vendas) {
-        return (
-            <div className="container">
-                <div className="text-center p-8 text-slate-500 dark:text-slate-400">Carregando histórico...</div>
-            </div>
-        );
-    }
-
-    const handleSort = (key) => {
-        let direction = 'asc';
-        if (sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
-        else if (sortConfig.key === key && sortConfig.direction === 'desc') direction = 'none';
-        setSortConfig({ key, direction });
-    };
-
-    const SortIcon = ({ columnKey }) => {
-        if (sortConfig.key !== columnKey || sortConfig.direction === 'none')
-            return <ChevronsUpDown size={14} className="text-slate-400 opacity-50 group-hover:opacity-100 transition-opacity" />;
-        if (sortConfig.direction === 'asc') return <ArrowUp size={14} className="text-blue-500" />;
-        return <ArrowDown size={14} className="text-blue-500" />;
-    };
-
+    const toggleSort = (key) => setSortConfig((current) => ({
+        key,
+        direction: current.key !== key || current.direction === 'none' ? 'asc' : current.direction === 'asc' ? 'desc' : 'none'
+    }));
     const processedVendas = useMemo(() => {
-        let result = vendas.filter(venda => {
-            if (!searchTerm) return true;
-            const s = searchTerm.toLowerCase();
-            const dateStr = formatDate(venda.data).toLowerCase();
-            return (
-                venda.produto?.toLowerCase().includes(s) ||
-                venda.categoria?.toLowerCase().includes(s) ||
-                venda.canal?.toLowerCase().includes(s) ||
-                dateStr.includes(s) ||
-                venda.valor?.toString().includes(s) ||
-                venda.custo?.toString().includes(s)
-            );
+        const query = searchTerm.trim().toLocaleLowerCase('pt-BR');
+        const result = (vendas || []).filter((venda) => !query || [venda.produto, venda.categoria, venda.canal, formatDate(venda.data), venda.valor, venda.custo].some((value) => String(value ?? '').toLocaleLowerCase('pt-BR').includes(query)));
+        if (sortConfig.direction === 'none') return result;
+        return result.sort((a, b) => {
+            const aValue = sortConfig.key === 'data' ? new Date(a.data).getTime() : Number(a[sortConfig.key]) || 0;
+            const bValue = sortConfig.key === 'data' ? new Date(b.data).getTime() : Number(b[sortConfig.key]) || 0;
+            return (aValue - bValue) * (sortConfig.direction === 'asc' ? 1 : -1);
         });
-
-        if (sortConfig.direction !== 'none') {
-            result.sort((a, b) => {
-                let aVal = sortConfig.key === 'data' ? new Date(a.data).getTime() : a[sortConfig.key];
-                let bVal = sortConfig.key === 'data' ? new Date(b.data).getTime() : b[sortConfig.key];
-                if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
-                if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
-                return 0;
-            });
-        }
-        return result;
     }, [vendas, searchTerm, sortConfig, formatDate]);
 
-    const totalItems = processedVendas.length;
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentVendas = processedVendas.slice(indexOfFirstItem, indexOfLastItem);
-
-    const handleSearch = (e) => { setSearchTerm(e.target.value); setCurrentPage(1); };
-
-    const handleCancelSale = async (venda) => {
-        const ok = await confirm({
-            title: 'Cancelar venda',
-            message: `Deseja cancelar a venda de "${venda.produto}"?`,
-            confirmLabel: 'Sim, cancelar',
-            cancelLabel: 'Não',
-            variant: 'danger',
-        });
-
-        if (!ok) return;
-
+    const totalPages = Math.max(1, Math.ceil(processedVendas.length / itemsPerPage));
+    const safePage = Math.min(currentPage, totalPages);
+    const currentVendas = processedVendas.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
+    const handleCancel = async (venda) => {
+        const accepted = await confirm({ title: 'Cancelar venda', message: `Deseja cancelar a venda de "${venda.produto}"?`, confirmLabel: 'Sim, cancelar', cancelLabel: 'Não', variant: 'danger' });
+        if (!accepted) return;
         setCancelingId(venda.id);
-        const result = await cancelarVenda(venda.id);
-
-        if (result.ok) {
-            toast.success('Venda cancelada', `"${venda.produto}" voltou para o estoque disponível.`);
-        } else {
-            toast.error('Erro ao cancelar venda', result.message);
-        }
-
+        const result = await cancelarVenda(venda.estoqueId);
+        if (result.ok) toast.success('Venda cancelada', `"${venda.produto}" voltou para o estoque disponível.`);
+        else toast.error('Erro ao cancelar venda', result.message);
         setCancelingId(null);
     };
+    const sortHead = (key, label, align = '') => <th className={`cursor-pointer select-none hover:bg-slate-100/60 dark:hover:bg-slate-700/60 ${align}`} onClick={() => toggleSort(key)}><div className={`flex items-center gap-2 ${align ? 'justify-end' : ''}`}>{label}<SortIcon active={sortConfig.key === key} direction={sortConfig.direction} /></div></th>;
 
-    /* ── sortable th class ── */
-    const thSort = 'cursor-pointer group select-none hover:bg-slate-100/60 dark:hover:bg-slate-700/60 transition-colors';
+    if (isLoading) return <div className="container"><div className="page-header"><div><h1 className="page-title">Histórico de Vendas</h1><p className="page-subtitle">Carregando seu histórico...</p></div></div><div className="card h-64 animate-pulse bg-slate-100 dark:bg-slate-800" /></div>;
 
-    return (
-        <div className="container">
-            <div className="page-header">
-                <div>
-                    <h1 className="page-title">Histórico de Vendas</h1>
-                    <p className="page-subtitle">Visualize todas as vendas realizadas no sistema</p>
-                </div>
-            </div>
-
-            {/* Search */}
-            <div className="mb-4 relative w-full md:w-80">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                <input
-                    type="text"
-                    placeholder="Buscar nas vendas..."
-                    className="input pl-10"
-                    value={searchTerm}
-                    onChange={handleSearch}
-                />
-                {searchTerm && (
-                    <button
-                        onClick={() => { setSearchTerm(''); setCurrentPage(1); }}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-                    >
-                        <span className="sr-only">Limpar</span>
-                        ×
-                    </button>
-                )}
-            </div>
-
-            <div className="card overflow-hidden p-0">
-                {/* Card header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
-                    <h2 className="section-heading">
-                        <FileText size={18} className="text-blue-500" />
-                        {searchTerm ? 'Resultados da Busca' : 'Todas as Vendas'}
-                    </h2>
-                    <span className="badge badge-blue">
-                        {searchTerm
-                            ? `${totalItems} resultado${totalItems !== 1 ? 's' : ''}`
-                            : `${totalItems} registro${totalItems !== 1 ? 's' : ''}`}
-                    </span>
-                </div>
-
-                <div className="table-container">
-                    {totalItems === 0 ? (
-                        <div className="p-12 text-center">
-                            <Search size={48} className="mx-auto mb-4 text-slate-300 dark:text-slate-600" />
-                            <p className="text-lg font-medium text-slate-600 dark:text-slate-400 mb-1">Nenhum resultado encontrado</p>
-                            <p className="text-sm text-slate-400 dark:text-slate-500">Não encontramos nenhuma venda correspondente à sua busca.</p>
-                            {searchTerm && (
-                                <button
-                                    onClick={() => { setSearchTerm(''); setCurrentPage(1); }}
-                                    className="mt-4 text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 font-medium text-sm transition-colors"
-                                >
-                                    Limpar filtros
-                                </button>
-                            )}
-                        </div>
-                    ) : (
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th className={thSort} onClick={() => handleSort('data')}>
-                                        <div className="flex items-center gap-2">Data <SortIcon columnKey="data" /></div>
-                                    </th>
-                                    <th>Produto</th>
-                                    <th>Categoria</th>
-                                    <th>Canal de Venda</th>
-                                    <th className={`text-right ${thSort}`} onClick={() => handleSort('custo')}>
-                                        <div className="flex items-center justify-end gap-2">Valor de Custo <SortIcon columnKey="custo" /></div>
-                                    </th>
-                                    <th className={`text-right ${thSort}`} onClick={() => handleSort('valor')}>
-                                        <div className="flex items-center justify-end gap-2">Valor de Venda <SortIcon columnKey="valor" /></div>
-                                    </th>
-                                    <th className="text-center">Funções</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {currentVendas.map(venda => (
-                                    <tr key={venda.id}>
-                                        <td className="font-medium text-slate-700 dark:text-slate-300">
-                                            <div className="flex items-center gap-2">
-                                                <Calendar size={14} className="text-slate-400 dark:text-slate-500" />
-                                                {formatDate(venda.data)}
-                                            </div>
-                                        </td>
-                                        <td className="font-semibold text-slate-800 dark:text-slate-100">{venda.produto}</td>
-                                        <td><span className="badge badge-gray">{venda.categoria}</span></td>
-                                        <td><span className="capitalize text-sm text-slate-600 dark:text-slate-400">{venda.canal}</span></td>
-                                        <td className="text-right font-mono text-slate-600 dark:text-slate-400">
-                                            R$ {venda.custo.toFixed(2)}
-                                        </td>
-                                        <td className="text-right font-bold text-blue-600 dark:text-blue-400">
-                                            R$ {venda.valor.toFixed(2)}
-                                        </td>
-                                        <td className="text-center">
-                                            <button
-                                                onClick={() => handleCancelSale(venda)}
-                                                disabled={cancelingId === venda.id}
-                                                className={`p-2 rounded-lg transition-colors ${cancelingId === venda.id
-                                                        ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
-                                                        : 'text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
-                                                    }`}
-                                                title="Cancelar venda"
-                                                aria-label={`Cancelar venda de ${venda.produto}`}
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
-                </div>
-
-                {/* Pagination */}
-                {totalItems > 0 && (
-                    <div className="p-4 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between text-sm bg-slate-50/50 dark:bg-slate-800/50">
-                        <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                            <span>Mostrar</span>
-                            <select
-                                value={itemsPerPage}
-                                onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                                className="border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200"
-                            >
-                                <option value={10}>10</option>
-                                <option value={20}>20</option>
-                                <option value={50}>50</option>
-                            </select>
-                            <span>itens por página</span>
-                        </div>
-
-                        <div className="flex items-center gap-6">
-                            <span className="text-slate-500 dark:text-slate-400 font-medium">
-                                Mostrando {indexOfFirstItem + 1} a {Math.min(indexOfLastItem, totalItems)} de {totalItems}
-                            </span>
-
-                            <div className="flex items-center gap-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-1 shadow-sm">
-                                <button
-                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                    disabled={currentPage === 1}
-                                    className={`p-1 rounded-md transition-colors ${currentPage === 1
-                                            ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
-                                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 hover:text-slate-900 dark:hover:text-white'
-                                        }`}
-                                    title="Página Anterior"
-                                >
-                                    <ChevronLeft size={20} />
-                                </button>
-
-                                <span className="font-semibold text-slate-700 dark:text-slate-200 px-3 min-w-[80px] text-center">
-                                    {currentPage} / {totalPages || 1}
-                                </span>
-
-                                <button
-                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                    disabled={currentPage === totalPages || totalPages === 0}
-                                    className={`p-1 rounded-md transition-colors ${currentPage === totalPages || totalPages === 0
-                                            ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
-                                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 hover:text-slate-900 dark:hover:text-white'
-                                        }`}
-                                    title="Próxima Página"
-                                >
-                                    <ChevronRight size={20} />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
+    return <div className="container">
+        <div className="page-header"><div><h1 className="page-title">Histórico de Vendas</h1><p className="page-subtitle">Visualize todas as vendas realizadas no sistema</p></div></div>
+        <div className="mb-4 relative w-full md:w-80"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} /><input type="search" placeholder="Buscar nas vendas..." className="input pl-10" value={searchTerm} onChange={(event) => { setSearchTerm(event.target.value); setCurrentPage(1); }} /></div>
+        <div className="card overflow-hidden p-0"><div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700"><h2 className="section-heading"><FileText size={18} className="text-blue-500" />{searchTerm ? 'Resultados da busca' : 'Todas as vendas'}</h2><span className="badge badge-blue">{processedVendas.length} {processedVendas.length === 1 ? 'registro' : 'registros'}</span></div>
+            <div className="table-container">{!currentVendas.length ? <div className="p-12 text-center text-slate-500">Nenhuma venda encontrada.</div> : <table><thead><tr>{sortHead('data', 'Data')}<th>Produto</th><th>Categoria</th><th>Canal de venda</th>{sortHead('custo', 'Valor de custo', 'text-right')}{sortHead('valor', 'Valor de venda', 'text-right')}<th className="text-center">Funções</th></tr></thead><tbody>{currentVendas.map((venda) => <tr key={venda.id}><td className="font-medium"><div className="flex items-center gap-2"><Calendar size={14} className="text-slate-400" />{formatDate(venda.data)}</div></td><td className="font-semibold"><div className="flex items-center gap-2">{venda.produto}{venda.status === 'cancelada' && <span className="badge badge-gray">Cancelada</span>}{venda.dadosIncompletos && <span className="badge badge-yellow">Dados incompletos</span>}</div></td><td><span className="badge badge-gray">{venda.categoria}</span></td><td>{venda.canal}</td><td className="text-right font-mono">R$ {(Number(venda.custo) || 0).toFixed(2)}</td><td className="text-right font-bold text-blue-600">R$ {(Number(venda.valor) || 0).toFixed(2)}</td><td className="text-center"><button onClick={() => handleCancel(venda)} disabled={cancelingId === venda.id || venda.status === 'cancelada'} className="p-2 rounded-lg text-red-500 disabled:text-slate-300 hover:bg-red-50 dark:hover:bg-red-900/20" title={venda.status === 'cancelada' ? 'Venda já cancelada' : 'Cancelar venda'} aria-label={`Cancelar venda de ${venda.produto}`}><Trash2 size={18} /></button></td></tr>)}</tbody></table>}</div>
+            {processedVendas.length > 0 && <div className="p-4 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between text-sm"><div className="flex items-center gap-2"><span>Mostrar</span><select value={itemsPerPage} onChange={(event) => { setItemsPerPage(Number(event.target.value)); setCurrentPage(1); }} className="input w-auto py-1"><option value={10}>10</option><option value={20}>20</option><option value={50}>50</option></select><span>por página</span></div><div className="flex items-center gap-3"><span>{(safePage - 1) * itemsPerPage + 1}–{Math.min(safePage * itemsPerPage, processedVendas.length)} de {processedVendas.length}</span><button onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={safePage === 1} className="p-1 disabled:opacity-40"><ChevronLeft size={20} /></button><span>{safePage} / {totalPages}</span><button onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={safePage === totalPages} className="p-1 disabled:opacity-40"><ChevronRight size={20} /></button></div></div>}
         </div>
-    );
+    </div>;
 };
 
 export default HistoricoVendas;

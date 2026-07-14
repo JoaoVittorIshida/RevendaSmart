@@ -1,280 +1,69 @@
 import React, { useRef, useState } from 'react';
+import { ArrowLeft, Calendar, Check, Package, ShoppingCart } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { useToast } from '../components/Toast';
 import InlineCreate from '../components/InlineCreate';
-import { ShoppingCart, Check, ArrowLeft, Package, Calendar } from 'lucide-react';
-import { formatarMoeda, parsearMoeda, centavosParaReais } from '../utils/currency';
+import { centavosParaReais, formatarMoeda, parsearMoeda } from '../utils/currency';
+
+const localDate = () => new Date().toLocaleDateString('en-CA');
+const money = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
 
 const Vendas = () => {
-    const { produtos, itensEstoque, canaisVenda, venderItem, adicionarCanalVenda } = useData();
+    const { produtos, itensEstoque, canaisVenda, venderItem, adicionarCanalVenda, isLoading } = useData();
     const toast = useToast();
-
+    const dateRef = useRef(null);
     const [step, setStep] = useState(1);
-    const [selectedProduct, setSelectedProduct] = useState(null);
-    const [selectedUnit, setSelectedUnit] = useState(null);
-    const saleDateRef = useRef(null);
+    const [product, setProduct] = useState(null);
+    const [unit, setUnit] = useState(null);
+    const [details, setDetails] = useState(false);
+    const [sale, setSale] = useState({ valorLiquido: 0, valorBruto: 0, taxa: 0, frete: 0, canalVendaId: '', dataVenda: localDate() });
 
-    const getLocalDate = () => {
-        const d = new Date();
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    };
+    const availableProducts = produtos.filter((item) => itensEstoque.some((stock) => stock.produtoId === item.id && stock.status === 'disponivel'));
+    const units = product ? itensEstoque.filter((item) => item.produtoId === product.id && item.status === 'disponivel') : [];
+    const liquid = details ? Math.max(0, centavosParaReais(sale.valorBruto) - centavosParaReais(sale.taxa) - centavosParaReais(sale.frete)) : centavosParaReais(sale.valorLiquido);
 
-    const [saleData, setSaleData] = useState({
-        precoVenda: 0,
-        canalVendaId: '',
-        dataVenda: getLocalDate()
-    });
-
-    const productsWithStock = produtos.filter(p =>
-        itensEstoque.some(i => i.produtoId === p.id && i.status === 'disponivel')
-    );
-
-    const availableUnits = selectedProduct
-        ? itensEstoque.filter(i => i.produtoId === selectedProduct.id && i.status === 'disponivel')
-        : [];
-
-    const handleProductSelect = (prod) => { setSelectedProduct(prod); setStep(2); };
-    const handleUnitSelect = (unit) => { setSelectedUnit(unit); setSaleData(prev => ({ ...prev, precoVenda: 0 })); setStep(3); };
-
-    const handleFinishSale = async (e) => {
-        e.preventDefault();
-        if (!selectedUnit || !saleData.precoVenda || !saleData.canalVendaId) return;
-
-        const currentDate = new Date();
-        const [year, month, day] = saleData.dataVenda.split('-');
-        currentDate.setFullYear(year, month - 1, day);
-
-        await venderItem(selectedUnit.id, {
-            precoVenda: centavosParaReais(saleData.precoVenda),
-            canalVendaId: saleData.canalVendaId,
-            dataVenda: currentDate.toISOString()
+    const reset = () => { setStep(1); setProduct(null); setUnit(null); setDetails(false); setSale({ valorLiquido: 0, valorBruto: 0, taxa: 0, frete: 0, canalVendaId: '', dataVenda: localDate() }); };
+    const finish = async (event) => {
+        event.preventDefault();
+        if (!unit || !sale.canalVendaId || liquid < 0) return;
+        const result = await venderItem(unit.id, {
+            precoVenda: details ? undefined : liquid,
+            valorBruto: details ? centavosParaReais(sale.valorBruto) : undefined,
+            taxaPlataforma: details ? centavosParaReais(sale.taxa) : 0,
+            freteVendedor: details ? centavosParaReais(sale.frete) : 0,
+            canalVendaId: sale.canalVendaId,
+            dataVenda: new Date(`${sale.dataVenda}T12:00:00`).toISOString()
         });
-
-        toast.success('Venda registrada!', `${selectedProduct.nome} vendido com sucesso.`);
-        resetFlow();
+        if (result.ok) { toast.success('Venda registrada!', `${product.nome} entrou no histórico.`); reset(); }
+        else toast.error('Erro ao registrar venda', result.message);
+    };
+    const toggleDetails = () => {
+        setDetails((current) => {
+            if (!current) setSale((values) => ({ ...values, valorBruto: values.valorLiquido, taxa: 0, frete: 0 }));
+            return !current;
+        });
     };
 
-    const resetFlow = () => {
-        setStep(1);
-        setSelectedProduct(null);
-        setSelectedUnit(null);
-        setSaleData({ precoVenda: 0, canalVendaId: '', dataVenda: getLocalDate() });
-    };
+    if (isLoading) return <div className="container max-w-6xl"><div className="page-header"><div><h1 className="page-title">Registrar Venda</h1><p className="page-subtitle">Carregando itens disponíveis...</p></div></div><div className="grid sm:grid-cols-3 gap-4"><div className="card h-32 animate-pulse bg-slate-100 dark:bg-slate-800" /><div className="card h-32 animate-pulse bg-slate-100 dark:bg-slate-800" /><div className="card h-32 animate-pulse bg-slate-100 dark:bg-slate-800" /></div></div>;
 
-    const steps = [
-        { n: 1, label: 'Produto' },
-        { n: 2, label: 'Unidade' },
-        { n: 3, label: 'Finalizar' },
-    ];
-
-    const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-
-    return (
-        <div className="container max-w-6xl">
-            <h1 className="page-title mb-6">Registrar Venda</h1>
-
-            {/* Progress Stepper — symmetric grid */}
-            <div className="grid grid-cols-[1fr_80px_1fr_80px_1fr] items-center mb-10 max-w-lg">
-                {steps.map((s, idx) => (
-                    <React.Fragment key={s.n}>
-                        <div className="flex flex-col items-center gap-1.5">
-                            <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${step > s.n ? 'bg-green-500 text-white shadow-sm' :
-                                step === s.n ? 'bg-blue-600 text-white shadow-md ring-4 ring-blue-100 dark:ring-blue-900' :
-                                    'bg-slate-200 dark:bg-slate-600 text-slate-400 dark:text-slate-300'
-                                }`}>
-                                {step > s.n ? <Check size={16} /> : s.n}
-                            </div>
-                            <span className={`text-xs font-semibold text-center ${step === s.n ? 'text-blue-600 dark:text-blue-400' :
-                                step > s.n ? 'text-green-600 dark:text-green-400' :
-                                    'text-slate-400 dark:text-slate-500'
-                                }`}>
-                                {s.label}
-                            </span>
-                        </div>
-                        {idx < steps.length - 1 && (
-                            <div className={`h-0.5 w-full mb-4 transition-colors duration-300 ${step > s.n ? 'bg-green-400' : 'bg-slate-200 dark:bg-slate-600'
-                                }`} />
-                        )}
-                    </React.Fragment>
-                ))}
-            </div>
-
-
-            {/* Step 1: Select Product */}
-            {step === 1 && (
-                <div className="animate-in slide-in-from-right-4 duration-300">
-                    {productsWithStock.length === 0 ? (
-                        <div className="card">
-                            <div className="empty-state">
-                                <div className="empty-state-icon"><Package size={28} /></div>
-                                <p className="empty-state-title">Nenhum produto em estoque</p>
-                                <p className="empty-state-subtitle">Registre entradas no estoque para poder realizar vendas.</p>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {productsWithStock.map(prod => (
-                                <div
-                                    key={prod.id}
-                                    onClick={() => handleProductSelect(prod)}
-                                    className="card cursor-pointer hover:border-blue-400 hover:-translate-y-1 hover:shadow-md transition-all duration-200"
-                                >
-                                    <div className="flex items-center gap-4">
-                                        {prod.foto ? (
-                                            <img src={prod.foto} className="w-14 h-14 rounded-xl object-cover shrink-0" alt={prod.nome} />
-                                        ) : (
-                                            <div className="w-14 h-14 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0">
-                                                <ShoppingCart size={22} className="text-slate-400 dark:text-slate-500" />
-                                            </div>
-                                        )}
-                                        <div className="min-w-0">
-                                            <h3 className="font-bold text-slate-800 dark:text-slate-100 truncate">{prod.nome}</h3>
-                                            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{prod.marca}</p>
-                                            <span className="badge badge-green mt-1">
-                                                {itensEstoque.filter(i => i.produtoId === prod.id && i.status === 'disponivel').length} un.
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* Step 2: Select Unit */}
-            {step === 2 && selectedProduct && (
-                <div className="animate-in slide-in-from-right-4 duration-300">
-                    <div className="flex items-center gap-3 mb-6">
-                        <button onClick={() => setStep(1)} className="btn-back">
-                            <ArrowLeft size={18} />
-                        </button>
-                        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
-                            Qual unidade de <span className="text-blue-600 dark:text-blue-400">{selectedProduct.nome}</span> foi vendida?
-                        </h2>
-                    </div>
-
-                    <div className="flex flex-col gap-3">
-                        {availableUnits.map((unit, idx) => (
-                            <div key={unit.id} onClick={() => handleUnitSelect(unit)} className="card cursor-pointer hover:border-blue-400 hover:bg-blue-50/40 dark:hover:bg-blue-900/20 transition-all duration-150">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <span className="badge badge-gray font-mono">#{idx + 1}</span>
-                                        <div>
-                                            <p className="text-sm text-slate-500 dark:text-slate-400">
-                                                Origem: <span className="text-slate-700 dark:text-slate-200 font-semibold capitalize">{unit.origem}</span>
-                                            </p>
-                                            <p className="text-sm text-slate-500 dark:text-slate-400">
-                                                Entrada: {new Date(unit.dataEntrada).toLocaleDateString('pt-BR')}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className="stat-label">Custo</span>
-                                        <p className="font-mono font-bold text-slate-800 dark:text-slate-100 text-base">{formatCurrency(unit.precoCusto)}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Step 3: Finish Sale */}
-            {step === 3 && selectedUnit && (
-                <div className="max-w-2xl mx-auto animate-in slide-in-from-right-4 duration-300">
-                    <div className="flex items-center gap-3 mb-6">
-                        <button onClick={() => setStep(2)} className="btn-back">
-                            <ArrowLeft size={18} />
-                        </button>
-                        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">Finalizar Venda</h2>
-                    </div>
-
-                    {/* Summary card */}
-                    <div className="card bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 mb-5 p-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="stat-label">Produto</p>
-                                <p className="font-semibold text-slate-800 dark:text-slate-100">{selectedProduct.nome}</p>
-                            </div>
-                            <div className="text-right">
-                                <p className="stat-label">Custo da Unidade</p>
-                                <p className="font-mono font-bold text-blue-700 dark:text-blue-400 text-lg">{formatCurrency(selectedUnit.precoCusto)}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="card">
-                        <form onSubmit={handleFinishSale} className="flex flex-col gap-6">
-                            <div>
-                                <label className="label">Valor da Venda (R$)</label>
-                                <input
-                                    required
-                                    type="text"
-                                    inputMode="numeric"
-                                    className="input text-xl font-bold text-green-600 font-mono"
-                                    placeholder="0,00"
-                                    value={formatarMoeda(saleData.precoVenda)}
-                                    onChange={e => setSaleData({ ...saleData, precoVenda: parsearMoeda(e.target.value) })}
-                                />
-                            </div>
-
-                            <div>
-                                <div className="flex items-center justify-between mb-1.5">
-                                    <label className="label mb-0">Canal de Venda</label>
-                                    <InlineCreate
-                                        label="Canal de Venda"
-                                        onSave={adicionarCanalVenda}
-                                        onCreated={(item) => setSaleData(prev => ({ ...prev, canalVendaId: item.id }))}
-                                    />
-                                </div>
-                                <select
-                                    required
-                                    className="select"
-                                    value={saleData.canalVendaId}
-                                    onChange={e => setSaleData({ ...saleData, canalVendaId: e.target.value })}
-                                >
-                                    <option value="">Selecione...</option>
-                                    {canaisVenda.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                                </select>
-                            </div>
-
-                            <div className="relative">
-                                <label className="label">Data da Venda</label>
-                                <input
-                                    required
-                                    type="date"
-                                    className="input pr-12 date-input"
-                                    ref={saleDateRef}
-                                    value={saleData.dataVenda}
-                                    onChange={e => setSaleData({ ...saleData, dataVenda: e.target.value })}
-                                />
-                                <button
-                                    type="button"
-                                    aria-label="Abrir calendario"
-                                    onClick={() => {
-                                        if (saleDateRef.current?.showPicker) {
-                                            saleDateRef.current.showPicker();
-                                            return;
-                                        }
-                                        saleDateRef.current?.focus();
-                                    }}
-                                    className="absolute right-3 top-[2.15rem] flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-slate-100 dark:hover:bg-slate-700"
-                                >
-                                    <Calendar size={18} />
-                                </button>
-                            </div>
-
-                            <button type="submit" className="btn btn-success w-full py-3 text-base mt-2">
-                                <Check size={20} />
-                                Confirmar Venda
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            )}
+    return <div className="container max-w-6xl">
+        <div className="page-header"><div><h1 className="page-title">Registrar Venda</h1><p className="page-subtitle">Venda rápida por unidade, com detalhamento só quando precisar.</p></div></div>
+        <div className="flex items-center gap-2 mb-8 text-sm font-semibold text-slate-500 dark:text-slate-400">
+            {[['1', 'Produto'], ['2', 'Unidade'], ['3', 'Finalizar']].map(([number, label], index) => <React.Fragment key={number}><span className={`w-8 h-8 rounded-full grid place-items-center ${step >= Number(number) ? 'bg-blue-600 text-white' : 'bg-slate-200 dark:bg-slate-700'}`}>{step > Number(number) ? <Check size={16} /> : number}</span><span>{label}</span>{index < 2 && <span className="w-8 h-px bg-slate-300 dark:bg-slate-600" />}</React.Fragment>)}
         </div>
-    );
+        {step === 1 && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">{availableProducts.map((item) => <button type="button" key={item.id} onClick={() => { setProduct(item); setStep(2); }} className="card text-left hover:border-blue-400 hover:-translate-y-0.5 transition-all">
+            <div className="flex gap-4 items-center">{item.foto ? <img src={item.foto} alt="" className="w-14 h-14 rounded-xl object-cover" /> : <div className="w-14 h-14 grid place-items-center rounded-xl bg-slate-100 dark:bg-slate-700"><Package className="text-slate-400" /></div>}<div className="min-w-0"><p className="font-bold truncate">{item.nome}</p><p className="text-sm text-slate-500">{item.marca}</p><span className="badge badge-green mt-1">{itensEstoque.filter((stock) => stock.produtoId === item.id && stock.status === 'disponivel').length} un.</span></div></div>
+        </button>)}</div>}
+        {step === 2 && <div><button onClick={() => setStep(1)} className="btn-back mb-5"><ArrowLeft size={18} /></button><h2 className="text-xl font-bold mb-4">Selecione a unidade de {product.nome}</h2><div className="grid md:grid-cols-2 gap-3">{units.map((item, index) => <button key={item.id} type="button" onClick={() => { setUnit(item); setStep(3); }} className="card text-left hover:border-blue-400 transition-colors"><div className="flex justify-between"><div><span className="badge badge-gray">#{index + 1}</span><p className="mt-2 text-sm text-slate-500">Entrada: {new Date(item.dataEntrada).toLocaleDateString('pt-BR')}</p></div><div className="text-right"><p className="stat-label">Custo</p><p className="font-mono font-bold">{money(item.precoCusto)}</p></div></div></button>)}</div></div>}
+        {step === 3 && <div className="max-w-2xl mx-auto"><button onClick={() => setStep(2)} className="btn-back mb-5"><ArrowLeft size={18} /></button><div className="card bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900 mb-4 flex justify-between"><div><p className="stat-label">Produto</p><p className="font-bold">{product.nome}</p></div><div className="text-right"><p className="stat-label">Custo</p><p className="font-mono font-bold">{money(unit.precoCusto)}</p></div></div><div className="card"><form onSubmit={finish} className="space-y-5">
+            <div className="flex items-center justify-between"><label className="label mb-0">Detalhar taxa e frete</label><button type="button" onClick={toggleDetails} className={`badge ${details ? 'badge-blue' : 'badge-gray'}`}>{details ? 'Ativo' : 'Opcional'}</button></div>
+            {!details ? <div><label className="label">Valor líquido recebido (R$)</label><input required inputMode="numeric" className="input text-xl font-mono font-bold text-green-600" value={formatarMoeda(sale.valorLiquido)} onChange={(event) => setSale({ ...sale, valorLiquido: parsearMoeda(event.target.value) })} placeholder="0,00" /></div> : <div className="grid sm:grid-cols-3 gap-4"><div><label className="label">Valor cobrado</label><input required inputMode="numeric" className="input" value={formatarMoeda(sale.valorBruto)} onChange={(event) => setSale({ ...sale, valorBruto: parsearMoeda(event.target.value) })} /></div><div><label className="label">Taxa</label><input inputMode="numeric" className="input" value={formatarMoeda(sale.taxa)} onChange={(event) => setSale({ ...sale, taxa: parsearMoeda(event.target.value) })} /></div><div><label className="label">Frete pago</label><input inputMode="numeric" className="input" value={formatarMoeda(sale.frete)} onChange={(event) => setSale({ ...sale, frete: parsearMoeda(event.target.value) })} /></div></div>}
+            {details && <div className="p-4 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900"><p className="stat-label">Valor líquido final</p><p className="font-mono text-2xl font-bold text-green-700 dark:text-green-400">{money(liquid)}</p></div>}
+            <div><div className="flex justify-between"><label className="label">Canal de venda</label><InlineCreate label="Canal de Venda" onSave={adicionarCanalVenda} onCreated={(item) => setSale((values) => ({ ...values, canalVendaId: item.id }))} /></div><select required className="select" value={sale.canalVendaId} onChange={(event) => setSale({ ...sale, canalVendaId: event.target.value })}><option value="">Selecione...</option>{canaisVenda.map((channel) => <option key={channel.id} value={channel.id}>{channel.nome}</option>)}</select></div>
+            <div className="relative"><label className="label">Data da venda</label><input ref={dateRef} required type="date" className="input" value={sale.dataVenda} onChange={(event) => setSale({ ...sale, dataVenda: event.target.value })} /><Calendar className="absolute right-3 bottom-3 text-slate-400" size={18} /></div>
+            <button className="btn btn-success w-full py-3"><ShoppingCart size={19} />Confirmar venda</button>
+        </form></div></div>}
+    </div>;
 };
 
 export default Vendas;

@@ -1,177 +1,141 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { AlertTriangle, CalendarClock, Package, Plus, Trash2, Unlock } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
-import { Plus, Package, ChevronDown, Tag, Trash2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+
+const money = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
+const ageInDays = (date) => Math.floor((Date.now() - new Date(date).getTime()) / 86400000);
+const plural = (value, singular, pluralWord) => `${value} ${value === 1 ? singular : pluralWord}`;
+const tomorrowInputDate = () => {
+    const date = new Date();
+    date.setDate(date.getDate() + 1);
+    return date.toLocaleDateString('en-CA');
+};
+const reservationIsExpired = (item) => item.status === 'reservado' && item.reservadoAte && new Date(item.reservadoAte).getTime() <= Date.now();
 
 const Estoque = () => {
-    const { produtos, itensEstoque, removerItemEstoque } = useData();
+    const { produtos, itensEstoque, removerItemEstoque, reservarItem, liberarReserva, isLoading } = useData();
     const toast = useToast();
     const confirm = useConfirm();
-    const [produtoExpandido, setProdutoExpandido] = useState(null);
-    const [removendoItemId, setRemovendoItemId] = useState(null);
+    const [filter, setFilter] = useState('todos');
+    const [reservation, setReservation] = useState(null);
+    const [reserveUntil, setReserveUntil] = useState('');
+    const [observation, setObservation] = useState('');
+    const [expanded, setExpanded] = useState(null);
 
-    const estoqueAgrupado = produtos.map(prod => {
-        const itens = itensEstoque.filter(item => item.produtoId === prod.id && item.status === 'disponivel');
-        return {
-            ...prod,
-            itens,
-            qtdDisponivel: itens.length,
-            custoTotalEstoque: itens.reduce((acc, item) => acc + item.precoCusto, 0)
-        };
-    }).sort((a, b) => b.qtdDisponivel - a.qtdDisponivel);
+    const stock = useMemo(() => itensEstoque.filter((item) => {
+        const age = ageInDays(item.dataEntrada);
+        if (filter === 'disponiveis') return item.status === 'disponivel';
+        if (filter === 'reservados') return item.status === 'reservado';
+        if (filter.endsWith('+')) return item.status !== 'vendido' && age >= Number(filter);
+        return item.status !== 'vendido';
+    }), [filter, itensEstoque]);
+    const invested = itensEstoque.filter((item) => item.status !== 'vendido').reduce((sum, item) => sum + item.precoCusto, 0);
+    const stopped = itensEstoque.filter((item) => item.status !== 'vendido' && ageInDays(item.dataEntrada) >= 30).length;
+    const expiredReservations = itensEstoque.filter(reservationIsExpired);
+    const groups = produtos
+        .map((product) => ({ ...product, itens: stock.filter((item) => item.produtoId === product.id) }))
+        .filter((product) => product.itens.length)
+        .sort((a, b) => b.itens.length - a.itens.length);
 
-    const handleDeleteItem = async (item, nomeProduto, indexExibicao) => {
-        const ok = await confirm({
-            title: 'Excluir unidade do estoque',
-            message: `Deseja excluir a unidade #${indexExibicao} de "${nomeProduto}"? Esta ação não pode ser desfeita.`,
-            confirmLabel: 'Excluir',
-            cancelLabel: 'Cancelar',
-            variant: 'danger',
+    const reserve = async (event) => {
+        event.preventDefault();
+        if (!reservation) return;
+        const result = await reservarItem(reservation.id, {
+            reservadoAte: new Date(`${reserveUntil}T23:59:00`).toISOString(),
+            observacao: observation
         });
-
-        if (!ok) return;
-
-        setRemovendoItemId(item.id);
-        const result = await removerItemEstoque(item.id);
-
-        if (result?.ok) {
-            toast.success('Unidade excluída', `"${nomeProduto}" foi atualizado no estoque.`);
+        if (result.ok) {
+            toast.success('Item reservado', 'A unidade foi removida da disponibilidade.');
+            setReservation(null);
         } else {
-            toast.error('Erro ao excluir unidade', result?.message || 'Não foi possível excluir este item.');
+            toast.error('Não foi possível reservar', result.message);
         }
-
-        setRemovendoItemId(null);
     };
 
-    return (
-        <div className="container">
-            {/* Header */}
-            <div className="page-header">
-                <div>
-                    <h1 className="page-title">Estoque</h1>
-                    <p className="page-subtitle">Gerencie a entrada e visualização de itens</p>
-                </div>
-                <Link to="/estoque/entrada" className="btn btn-primary">
-                    <Plus size={18} />
-                    Nova Entrada
-                </Link>
-            </div>
+    const startReservation = (item) => {
+        setReservation(item);
+        setReserveUntil(tomorrowInputDate());
+        setObservation('');
+    };
 
-            {estoqueAgrupado.length === 0 ? (
-                <div className="card">
-                    <div className="empty-state">
-                        <div className="empty-state-icon"><Package size={28} /></div>
-                        <p className="empty-state-title">Nenhum produto cadastrado</p>
-                        <p className="empty-state-subtitle">Cadastre produtos para começar a controlar seu estoque.</p>
-                    </div>
-                </div>
-            ) : (
-                <div className="flex flex-col gap-3">
-                    {estoqueAgrupado.map(prod => (
-                        <div key={prod.id} className="card p-0 overflow-hidden">
-                            {/* Accordion Header */}
-                            <div
-                                className="p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-700/40 transition-colors duration-150"
-                                onClick={() => setProdutoExpandido(produtoExpandido === prod.id ? null : prod.id)}
-                            >
-                                <div className="flex items-center gap-4 min-w-0">
-                                    {prod.foto ? (
-                                        <img src={prod.foto} className="w-14 h-14 rounded-xl object-cover shadow-sm shrink-0" alt={prod.nome} />
-                                    ) : (
-                                        <div className="w-14 h-14 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0">
-                                            <Package size={24} className="text-slate-400 dark:text-slate-500" />
-                                        </div>
-                                    )}
-                                    <div className="min-w-0">
-                                        <h3 className="font-bold text-slate-800 dark:text-slate-100 truncate">{prod.nome}</h3>
-                                        <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{prod.marca}
-                                            {prod.categoria && <span className="ml-2"><span className="badge badge-gray">{prod.categoria}</span></span>}
-                                        </p>
-                                    </div>
-                                </div>
+    const remove = async (item) => {
+        const ok = await confirm({
+            title: 'Excluir unidade',
+            message: 'Esta unidade será removida do estoque.',
+            confirmLabel: 'Excluir',
+            cancelLabel: 'Cancelar',
+            variant: 'danger'
+        });
+        if (!ok) return;
+        const result = await removerItemEstoque(item.id);
+        if (result.ok) toast.success('Unidade excluída', 'O estoque foi atualizado.');
+        else toast.error('Erro ao excluir', result.message);
+    };
 
-                                <div className="flex items-center gap-6 shrink-0 ml-4">
-                                    <div className="hidden sm:flex flex-col items-end">
-                                        <span className="stat-label">Custo em Estoque</span>
-                                        <span className="font-mono font-bold text-slate-800 dark:text-slate-100 text-base">
-                                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(prod.custoTotalEstoque)}
-                                        </span>
-                                    </div>
-                                    <div className="flex flex-col items-center min-w-[64px]">
-                                        <span className={`text-3xl font-bold ${prod.qtdDisponivel > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                            {prod.qtdDisponivel}
-                                        </span>
-                                        <span className="stat-label">Unidades</span>
-                                    </div>
-                                    <ChevronDown
-                                        size={20}
-                                        className={`text-slate-400 transition-transform duration-200 ${produtoExpandido === prod.id ? 'rotate-180' : ''}`}
-                                    />
-                                </div>
-                            </div>
+    const release = async (item) => {
+        const ok = await confirm({
+            title: 'Liberar reserva',
+            message: reservationIsExpired(item)
+                ? 'A data da reserva venceu. Confirme que o produto foi liberado antes de disponibilizá-lo novamente.'
+                : 'Confirme que o produto foi liberado antes de disponibilizá-lo novamente.',
+            confirmLabel: 'Liberar item',
+            cancelLabel: 'Manter reservado'
+        });
+        if (!ok) return;
+        const result = await liberarReserva(item.id);
+        if (result.ok) toast.success('Reserva liberada', 'O item voltou a ficar disponível.');
+        else toast.error('Erro', result.message);
+    };
 
-                            {/* Expanded Details */}
-                            {produtoExpandido === prod.id && (
-                                <div className="bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 p-5 animate-in slide-in-from-top-2 duration-200">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h4 className="section-heading text-sm">
-                                            <Tag size={15} className="text-slate-400" />
-                                            Itens em Estoque
-                                        </h4>
-                                        <span className="text-xs text-slate-400 font-medium">Ordenado por data de entrada</span>
-                                    </div>
+    if (isLoading) {
+        return <div className="container"><div className="page-header"><div><h1 className="page-title">Estoque</h1><p className="page-subtitle">Carregando seu estoque...</p></div></div><div className="grid sm:grid-cols-2 gap-4"><div className="card h-32 animate-pulse bg-slate-100 dark:bg-slate-800" /><div className="card h-32 animate-pulse bg-slate-100 dark:bg-slate-800" /></div></div>;
+    }
 
-                                    {prod.itens.length === 0 ? (
-                                        <p className="text-slate-400 text-sm italic">Nenhum item em estoque.</p>
-                                    ) : (
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                            {prod.itens.map((item, idx) => (
-                                                <div key={item.id} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm hover:border-blue-300 dark:hover:border-blue-500 hover:shadow-sm transition-all duration-150">
-                                                    <div className="flex items-center gap-3">
-                                                        <span className="badge badge-gray font-mono text-xs">#{idx + 1}</span>
-                                                        <div>
-                                                            <span className="stat-label">Custo Unitário</span>
-                                                            <p className="font-bold text-slate-800 dark:text-slate-100 font-mono">
-                                                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.precoCusto)}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex flex-col items-end gap-1">
-                                                        <span className="badge badge-blue">
-                                                            {item.origem.charAt(0).toUpperCase() + item.origem.slice(1)}
-                                                        </span>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-xs text-slate-400">
-                                                                {new Date(item.dataEntrada).toLocaleDateString('pt-BR')}
-                                                            </span>
-                                                            <button
-                                                                onClick={() => handleDeleteItem(item, prod.nome, idx + 1)}
-                                                                disabled={removendoItemId === item.id}
-                                                                className={`p-1.5 rounded-md transition-colors ${removendoItemId === item.id
-                                                                        ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
-                                                                        : 'text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
-                                                                    }`}
-                                                                title="Excluir unidade"
-                                                                aria-label={`Excluir unidade #${idx + 1} de ${prod.nome}`}
-                                                            >
-                                                                <Trash2 size={14} />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            )}
+    return <div className="container">
+        <div className="page-header">
+            <div><h1 className="page-title">Estoque</h1><p className="page-subtitle">Veja o capital investido e o tempo de cada item em estoque.</p></div>
+            <Link to="/estoque/entrada" className="btn btn-primary"><Plus size={18} />Nova entrada</Link>
         </div>
-    );
+
+        <div className="grid sm:grid-cols-2 gap-4 mb-6">
+            <div className="card border-blue-200 dark:border-blue-900"><p className="stat-label">Capital imobilizado</p><p className="font-mono text-2xl font-bold text-blue-700 dark:text-blue-400">{money(invested)}</p><p className="text-xs text-slate-500 mt-1">Itens disponíveis e reservados</p></div>
+            <div className="card border-amber-200 dark:border-amber-900"><p className="stat-label">Itens parados há 30+ dias</p><p className="font-mono text-2xl font-bold text-amber-700 dark:text-amber-400">{stopped}</p><p className="text-xs text-slate-500 mt-1">Use o filtro para revisar oportunidades</p></div>
+        </div>
+
+        {expiredReservations.length > 0 && <section role="alert" className="mb-6 flex flex-col gap-4 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-amber-950 shadow-sm dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex gap-3">
+                <div className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-amber-200 text-amber-800 dark:bg-amber-900 dark:text-amber-200"><AlertTriangle size={19} aria-hidden="true" /></div>
+                <div><p className="font-semibold">{plural(expiredReservations.length, 'reserva vencida', 'reservas vencidas')} aguardando revisão</p><p className="mt-1 text-sm text-amber-800 dark:text-amber-200">Os itens continuam reservados até você confirmar a liberação manualmente.</p></div>
+            </div>
+            <button type="button" className="btn btn-secondary shrink-0 text-sm" onClick={() => setFilter('reservados')}>Ver reservas</button>
+        </section>}
+
+        <div className="flex gap-2 overflow-x-auto pb-3 mb-2">{[['todos', 'Todos'], ['disponiveis', 'Disponíveis'], ['reservados', 'Reservados'], ['30+', '30+ dias'], ['60+', '60+ dias'], ['90+', '90+ dias']].map(([value, label]) => <button key={value} onClick={() => setFilter(value)} className={`badge whitespace-nowrap px-3 py-2 ${filter === value ? 'badge-blue' : 'badge-gray'}`}>{label}</button>)}</div>
+
+        <div className="space-y-3">{groups.map((product) => <div key={product.id} className="card p-0 overflow-hidden">
+            <button onClick={() => setExpanded(expanded === product.id ? null : product.id)} className="w-full p-5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800">
+                <div className="flex items-center gap-3">{product.foto ? <img src={product.foto} alt="" className="w-12 h-12 rounded-xl object-cover" /> : <div className="w-12 h-12 grid place-items-center rounded-xl bg-slate-100 dark:bg-slate-700"><Package /></div>}<div><p className="font-bold">{product.nome}</p><p className="text-sm text-slate-500">{product.marca} · {plural(product.itens.length, 'unidade', 'unidades')}</p></div></div>
+                <span className="badge badge-blue">{money(product.itens.reduce((sum, item) => sum + item.precoCusto, 0))}</span>
+            </button>
+            {expanded === product.id && <div className="border-t border-slate-100 dark:border-slate-700 p-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">{product.itens.map((item, index) => {
+                const age = ageInDays(item.dataEntrada);
+                const isReservationOpen = reservation?.id === item.id;
+                const expired = reservationIsExpired(item);
+                return <div key={item.id} className={`rounded-xl border p-4 ${expired ? 'border-amber-300 bg-amber-50/40 dark:border-amber-900 dark:bg-amber-950/10' : 'border-slate-200 dark:border-slate-700'} ${isReservationOpen ? 'sm:col-span-2 lg:col-span-3' : ''}`}>
+                    <div className="flex justify-between"><span className="badge badge-gray">#{index + 1}</span><span className={`badge ${expired ? 'badge-yellow' : item.status === 'reservado' ? 'badge-blue' : age >= 30 ? 'badge-yellow' : 'badge-green'}`}>{expired ? 'Reserva vencida' : item.status === 'reservado' ? 'Reservado' : `${age} dias`}</span></div>
+                    <p className="font-mono font-bold mt-3">{money(item.precoCusto)}</p>
+                    <p className="text-xs text-slate-500 mt-1">Entrada: {new Date(item.dataEntrada).toLocaleDateString('pt-BR')}</p>
+                    {item.status === 'reservado' && <p className={`text-xs mt-1 ${expired ? 'text-amber-700 dark:text-amber-300' : 'text-blue-600 dark:text-blue-300'}`}>Até {new Date(item.reservadoAte).toLocaleDateString('pt-BR')}{expired ? ' · aguardando liberação manual' : ''}</p>}
+                    <div className="flex gap-2 mt-4">{item.status === 'disponivel' ? <button className="btn btn-secondary text-xs px-3 py-2" onClick={() => startReservation(item)}><CalendarClock size={15} />Reservar</button> : <button className="btn btn-secondary text-xs px-3 py-2" onClick={() => release(item)}><Unlock size={15} />Liberar</button>}<button className="p-2 text-red-500 hover:bg-red-50 rounded-lg" onClick={() => remove(item)} title="Excluir unidade"><Trash2 size={16} /></button></div>
+                    {isReservationOpen && <form onSubmit={reserve} className="mt-4 border-t border-violet-100 dark:border-violet-900 pt-4 grid md:grid-cols-[1fr_1fr_auto] gap-3 items-end"><div><label className="label">Reservar até</label><input required type="date" min={new Date().toLocaleDateString('en-CA')} className="input" value={reserveUntil} onChange={(event) => setReserveUntil(event.target.value)} /></div><div><label className="label">Observação opcional</label><input className="input" maxLength="280" value={observation} onChange={(event) => setObservation(event.target.value)} placeholder="Ex.: confirmado até amanhã" /></div><div className="flex gap-2"><button className="btn btn-primary">Reservar</button><button type="button" className="btn btn-secondary" onClick={() => setReservation(null)}>Cancelar</button></div></form>}
+                </div>;
+            })}</div>}
+        </div>)}</div>
+        {!groups.length && <div className="card text-center p-12 text-slate-500"><Package className="mx-auto mb-3" />Nenhum item corresponde a este filtro.</div>}
+    </div>;
 };
 
 export default Estoque;

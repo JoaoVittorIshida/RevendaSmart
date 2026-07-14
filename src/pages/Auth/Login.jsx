@@ -32,7 +32,7 @@ const Login = () => {
             } else {
                 setError(result.message);
             }
-        } catch (err) {
+        } catch {
             setError('Ocorreu um erro ao fazer login.');
         }
     };
@@ -93,7 +93,7 @@ const Login = () => {
 
                         {!apiHealth.isOnline && (
                             <div className="auth-server-warning">
-                                Servidor iniciando. O acesso sera liberado quando API e banco estiverem online.
+                                Servidor iniciando. O acesso será liberado quando API e banco estiverem online.
                             </div>
                         )}
 

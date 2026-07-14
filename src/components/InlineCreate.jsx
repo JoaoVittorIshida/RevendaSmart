@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Plus, Check, X, Loader2 } from 'lucide-react';
+import { useToast } from './Toast';
 
 /**
  * InlineCreate — pequeno formulário inline para criar um novo item (tag) sem sair da tela.
@@ -14,6 +15,7 @@ const InlineCreate = ({ label, onSave, onCreated }) => {
     const [value, setValue] = useState('');
     const [loading, setLoading] = useState(false);
     const inputRef = useRef(null);
+    const toast = useToast();
 
     // Foca o input quando abre
     useEffect(() => {
@@ -30,7 +32,11 @@ const InlineCreate = ({ label, onSave, onCreated }) => {
         setLoading(true);
         try {
             const item = await onSave(nome);
-            if (item && onCreated) onCreated(item);
+            if (!item?.ok) {
+                toast.error('Nao foi possivel salvar', item?.message || 'Tente novamente.');
+                return;
+            }
+            if (onCreated) onCreated(item);
             setOpen(false);
             setValue('');
         } finally {

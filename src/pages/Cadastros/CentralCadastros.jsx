@@ -6,7 +6,7 @@ const CadastroCard = ({ to, icon: Icon, title, description, color }) => (
     <Link to={to} className="card group hover:border-blue-400 hover:-translate-y-1 hover:shadow-md transition-all duration-200 cursor-pointer block no-underline">
         <div className="flex items-start justify-between mb-4">
             <div className={`p-3 rounded-xl ${color} text-white shadow-md`}>
-                <Icon size={22} />
+                {React.createElement(Icon, { size: 22 })}
             </div>
             <ArrowRight className="text-slate-300 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-200" size={18} />
         </div>

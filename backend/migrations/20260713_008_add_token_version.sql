@@ -1,0 +1,1 @@
+ALTER TABLE usuarios ADD COLUMN token_version INT UNSIGNED NOT NULL DEFAULT 0 AFTER senha;

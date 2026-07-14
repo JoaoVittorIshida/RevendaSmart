@@ -28,10 +28,18 @@ const ProdutoForm = () => {
         setLoading(true);
         try {
             if (isEditing) {
-                await atualizarProduto(id, formData);
+                const result = await atualizarProduto(id, formData);
+                if (!result.ok) {
+                    toast.error('Nao foi possivel salvar', result.message || 'Tente novamente.');
+                    return;
+                }
                 toast.success('Produto atualizado!', `"${formData.nome}" foi atualizado com sucesso.`);
             } else {
-                await adicionarProduto(formData);
+                const result = await adicionarProduto(formData);
+                if (!result.ok) {
+                    toast.error('Nao foi possivel salvar', result.message || 'Tente novamente.');
+                    return;
+                }
                 toast.success('Produto cadastrado!', `"${formData.nome}" foi adicionado ao sistema.`);
             }
             navigate('/cadastros/produtos');

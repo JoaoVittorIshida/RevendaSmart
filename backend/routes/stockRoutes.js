@@ -9,6 +9,8 @@ router.get('/', stockController.getStock);
 router.post('/entrada', stockController.addStockBatch);
 router.post('/:id/venda', stockController.sellItem);
 router.delete('/:id/venda', stockController.cancelSale);
+router.post('/:id/reserva', stockController.reserveItem);
+router.delete('/:id/reserva', stockController.releaseReservation);
 router.delete('/:id', stockController.deleteStockItem);
 
 module.exports = router;

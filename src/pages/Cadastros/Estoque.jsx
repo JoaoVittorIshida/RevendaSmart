@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useData } from '../contexts/DataContext';
-import { useToast } from '../components/Toast';
+import React, { useState } from 'react';
+import { useData } from '../../contexts/DataContext';
+import { useToast } from '../../components/Toast';
 import { Plus, Package, ChevronDown, ChevronUp, Save, X, ArrowDownRight, Tag } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -19,19 +19,6 @@ const Estoque = () => {
         canalCompraId: '',
         origem: 'nacional'
     });
-
-    // Calculo dinamico
-    useEffect(() => {
-        // Se mudou Qtd ou Unitario -> Atualiza Total
-        setFormData(prev => {
-            const novoTotal = Number(prev.quantidade) * Number(prev.custoUnitario);
-            // Evita loop infinito se ja estiver correto
-            if (novoTotal !== prev.custoTotal) {
-                return { ...prev, custoTotal: novoTotal };
-            }
-            return prev;
-        });
-    }, [formData.quantidade, formData.custoUnitario]);
 
     const handleTotalChange = (novoTotal) => {
         const total = Number(novoTotal);

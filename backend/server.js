@@ -6,75 +6,55 @@ require('dotenv').config();
 const db = require('./db');
 
 const app = express();
-
-// Trust proxy for rate limiters (Heroku, Render, Vercel, etc)
 app.set('trust proxy', 1);
-
-// Middlewares
 app.use(helmet());
 app.use(cookieParser());
 
-const corsOptions = {
-    origin: function (origin, callback) {
-        // Permitir requisições sem origin (como mobile apps ou curl) ou qualquer localhost
-        if (!origin || /^http:\/\/localhost:\d+$/.test(origin) || origin === process.env.FRONTEND_URL) {
-            callback(null, true);
-        } else {
-            callback(new Error('Bloqueado pelo CORS'));
-        }
+const allowedOrigins = new Set([
+    process.env.FRONTEND_URL,
+    ...(process.env.NODE_ENV !== 'production' ? ['http://localhost:5173', 'http://localhost:4173'] : [])
+].filter(Boolean));
+app.use(cors({
+    origin(origin, callback) {
+        // Requests without Origin are non-browser clients such as health checks and CLI.
+        // Browser origins must be explicitly allowed; never trust every localhost port.
+        if (!origin || allowedOrigins.has(origin)) return callback(null, true);
+        return callback(new Error('Bloqueado pelo CORS'));
     },
     credentials: true,
     optionsSuccessStatus: 200
-};
-app.use(cors(corsOptions));
-app.use(express.json());
+}));
+app.use(express.json({ limit: '1mb' }));
+app.use(require('./middleware/csrfMiddleware'));
 
-const csrfGuard = require('./middleware/csrfMiddleware');
-app.use(csrfGuard);
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/produtos', require('./routes/productsRoutes'));
+app.use('/api/estoque', require('./routes/stockRoutes'));
+app.use('/api/dados', require('./routes/dataRoutes'));
+app.use('/api/vendas', require('./routes/salesRoutes'));
+app.use('/api/anuncios', require('./routes/adsRoutes'));
+app.use('/api/portabilidade', require('./routes/portabilityRoutes'));
+app.use('/api/analises', require('./routes/analyticsRoutes'));
 
-// Routes
-const authRoutes = require('./routes/authRoutes');
-const productsRoutes = require('./routes/productsRoutes');
-const stockRoutes = require('./routes/stockRoutes');
-const dataRoutes = require('./routes/dataRoutes');
-
-app.use('/api/auth', authRoutes);
-app.use('/api/produtos', productsRoutes);
-app.use('/api/estoque', stockRoutes);
-app.use('/api/dados', dataRoutes);
-
-// Rota de Teste
-app.get('/', (req, res) => {
-    res.json({ message: 'API RevendaSmart Online 🚀' });
-});
-
+app.get('/', (req, res) => res.json({ message: 'API RevendaSmart Online' }));
 const checkHealth = async (req, res) => {
     try {
         const [rows] = await db.query('SELECT 1 + 1 AS result');
-        res.json({
-            status: 'online',
-            api: 'online',
-            database: 'online',
-            test_query: rows[0].result,
-            checked_at: new Date().toISOString()
-        });
-    } catch (error) {
-        res.status(503).json({
-            status: 'offline',
-            api: 'online',
-            database: 'offline',
-            message: 'Banco de dados indisponivel.',
-            error: error.message,
-            checked_at: new Date().toISOString()
-        });
+        res.json({ status: 'online', api: 'online', database: 'online', test_query: rows[0].result, checked_at: new Date().toISOString() });
+    } catch {
+        res.status(503).json({ status: 'offline', api: 'online', database: 'offline', message: 'Banco de dados indisponível.', checked_at: new Date().toISOString() });
     }
 };
-
-// Rota de verificacao de API + banco
 app.get('/api/health', checkHealth);
 app.get('/api/status', checkHealth);
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
+app.use((error, req, res, next) => {
+    if (res.headersSent) return next(error);
+    if (error?.type === 'entity.too.large') return res.status(413).json({ message: 'Requisicao excede o limite permitido.' });
+    if (error instanceof SyntaxError && 'body' in error) return res.status(400).json({ message: 'JSON invalido.' });
+    console.error(error);
+    return res.status(500).json({ message: 'Erro interno do servidor.' });
 });
+
+const port = process.env.PORT || 3001;
+app.listen(port, () => console.log(`Servidor rodando na porta ${port}`));

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Lock, Type, ArrowLeft } from 'lucide-react';
+import { Store, User, Lock, Type, ArrowLeft } from 'lucide-react';
 import ApiHealthIndicator from '../../components/ApiHealthIndicator';
 import { useApiHealth } from '../../hooks/useApiHealth';
 
@@ -13,7 +13,8 @@ const Cadastro = () => {
     const [formData, setFormData] = useState({
         nome: '',
         usuario: '',
-        senha: ''
+        senha: '',
+        nomeLoja: ''
     });
     const [error, setError] = useState('');
 
@@ -26,19 +27,19 @@ const Cadastro = () => {
             return;
         }
 
-        if (formData.senha.length < 4) {
-            setError('A senha deve ter pelo menos 4 caracteres.');
+        if (formData.senha.length < 8) {
+            setError('A senha deve ter pelo menos 8 caracteres.');
             return;
         }
 
         try {
-            const result = await registrar(formData.nome, formData.usuario, formData.senha);
+            const result = await registrar(formData.nome, formData.usuario, formData.senha, formData.nomeLoja);
             if (result.success) {
-                navigate('/');
+                navigate('/login');
             } else {
                 setError(result.message);
             }
-        } catch (err) {
+        } catch {
             setError('Ocorreu um erro ao criar a conta.');
         }
     };
@@ -81,6 +82,23 @@ const Cadastro = () => {
                         </div>
 
                         <div className="auth-input-group">
+                            <label className="auth-input-label">Nome da Loja <span className="font-normal opacity-70">(opcional)</span></label>
+                            <div className="relative">
+                                <div className="auth-input-icon">
+                                    <Store size={18} />
+                                </div>
+                                <input
+                                    type="text"
+                                    maxLength="100"
+                                    className="auth-input"
+                                    placeholder="Ex: Tech do João"
+                                    value={formData.nomeLoja}
+                                    onChange={e => setFormData({ ...formData, nomeLoja: e.target.value })}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="auth-input-group">
                             <label className="auth-input-label">Usuário</label>
                             <div className="relative">
                                 <div className="auth-input-icon">
@@ -106,6 +124,7 @@ const Cadastro = () => {
                                 <input
                                     type="password"
                                     required
+                                    minLength="8"
                                     className="auth-input"
                                     placeholder="Mínimo 4 caracteres"
                                     value={formData.senha}
@@ -116,7 +135,7 @@ const Cadastro = () => {
 
                         {!apiHealth.isOnline && (
                             <div className="auth-server-warning">
-                                Servidor iniciando. O cadastro sera liberado quando API e banco estiverem online.
+                                Servidor iniciando. O cadastro será liberado quando API e banco estiverem online.
                             </div>
                         )}
 

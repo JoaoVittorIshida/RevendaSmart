@@ -37,7 +37,7 @@ const buildChannelData = (items, channelMap, channelIdKey) => {
 
     items.forEach((item) => {
         const channel = channelMap.get(item[channelIdKey]);
-        const channelName = channel?.nome ?? 'Não informado';
+        const channelName = item.canal || channel?.nome || 'Não informado';
 
         if (!grouped[channelName]) {
             grouped[channelName] = { name: channelName, value: 0 };
@@ -112,7 +112,7 @@ const DashboardSkeleton = () => (
     </div>
 );
 
-const KPICard = ({ title, displayValue, subvalue, icon: Icon, variant }) => {
+const KPICard = ({ title, displayValue, subvalue, icon, variant }) => {
     const variants = {
         green: {
             card: 'kpi-card kpi-card-green',
@@ -153,7 +153,7 @@ const KPICard = ({ title, displayValue, subvalue, icon: Icon, variant }) => {
                 </div>
 
                 <div className={`p-3 rounded-xl ${currentVariant.icon} shrink-0 ml-3 transition-transform duration-200 hover:scale-110`}>
-                    <Icon size={22} />
+                    {React.createElement(icon, { size: 22 })}
                 </div>
             </div>
 
@@ -201,11 +201,11 @@ const PieCustomTooltip = ({ active, payload, itemLabel = 'venda' }) => {
     );
 };
 
-const ChannelPieCard = ({ title, data, icon: Icon, iconClassName, itemLabel }) => (
+const ChannelPieCard = ({ title, data, icon, iconClassName, itemLabel }) => (
     <div className="card p-0 overflow-hidden flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
             <h2 className="section-heading">
-                <Icon size={18} className={iconClassName} />
+                {React.createElement(icon, { size: 18, className: iconClassName })}
                 {title}
             </h2>
         </div>
@@ -213,7 +213,7 @@ const ChannelPieCard = ({ title, data, icon: Icon, iconClassName, itemLabel }) =
         <div className="p-4 flex-1 flex flex-col items-center justify-center">
             {data.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-[160px] text-slate-400 dark:text-slate-500">
-                    <Icon size={32} className="mb-2 opacity-50" />
+                    {React.createElement(icon, { size: 32, className: 'mb-2 opacity-50' })}
                     <p className="text-sm font-medium">Sem dados no período</p>
                 </div>
             ) : (
@@ -269,7 +269,7 @@ const TopItemsTooltip = ({ active, payload }) => {
 
 const Dashboard = () => {
     const { isDark } = useTheme();
-    const { itensEstoque, produtos, canaisVenda, canaisCompra, formatDate, isLoading } = useData();
+    const { itensEstoque, vendas, canaisVenda, canaisCompra, formatDate, isLoading } = useData();
 
     const [periodo, setPeriodo] = useState('total');
     const [topFiltro, setTopFiltro] = useState('produto');
@@ -279,13 +279,12 @@ const Dashboard = () => {
         const dataLimite = new Date();
         dataLimite.setDate(hoje.getDate() - 30);
 
-        const produtosMap = new Map(produtos.map((produto) => [produto.id, produto]));
         const canaisVendaMap = new Map(canaisVenda.map((canal) => [canal.id, canal]));
         const canaisCompraMap = new Map(canaisCompra.map((canal) => [canal.id, canal]));
 
-        const itensVendidos = itensEstoque.filter((item) => {
-            if (item.status !== 'vendido') return false;
-            if (periodo === '30dias') return new Date(item.dataVenda) >= dataLimite;
+        const itensVendidos = vendas.filter((item) => {
+            if (item.status !== 'concluida' || item.dadosIncompletos) return false;
+            if (periodo === '30dias') return new Date(item.data) >= dataLimite;
             return true;
         });
 
@@ -295,17 +294,17 @@ const Dashboard = () => {
         });
 
         const vendasDetalhadas = itensVendidos.map((item) => {
-            const produto = produtosMap.get(item.produtoId);
-            const precoVenda = Number(item.precoVenda) || 0;
-            const precoCusto = Number(item.precoCusto) || 0;
+            const precoVenda = Number(item.valor) || 0;
+            const precoCusto = Number(item.custo) || 0;
 
             return {
                 ...item,
                 precoVenda,
                 precoCusto,
                 lucro: precoVenda - precoCusto,
-                productName: produto?.nome ?? 'Produto desconhecido',
-                categoryName: produto?.categoria?.trim() || 'Sem categoria'
+                dataVenda: item.data,
+                productName: item.produto ?? 'Produto desconhecido',
+                categoryName: item.categoria?.trim() || 'Sem categoria'
             };
         });
 
@@ -338,7 +337,7 @@ const Dashboard = () => {
 
         const areaData = Object.values(vendasPorData)
             .sort((a, b) => a._ts - b._ts)
-            .map(({ _ts, ...rest }) => rest);
+            .map((item) => ({ date: item.date, receita: item.receita, lucro: item.lucro }));
 
         const salesChannelData = buildChannelData(vendasDetalhadas, canaisVendaMap, 'canalVendaId');
         const purchaseChannelData = buildChannelData(itensComprados, canaisCompraMap, 'canalCompraId');
@@ -356,7 +355,7 @@ const Dashboard = () => {
             purchaseChannelData,
             vendasDetalhadas
         };
-    }, [itensEstoque, produtos, canaisVenda, canaisCompra, periodo, formatDate]);
+    }, [itensEstoque, vendas, canaisVenda, canaisCompra, periodo, formatDate]);
 
     const topChartData = useMemo(() => {
         const grouped = dadosCalculados.vendasDetalhadas.reduce((acc, item) => {
@@ -394,6 +393,7 @@ const Dashboard = () => {
     const topChartColorSoft = topFiltro === 'categoria' ? '#d8b4fe' : '#93c5fd';
     const TopChartIcon = topFiltro === 'categoria' ? Tag : Package;
     const topFilterLabel = topFiltro === 'categoria' ? 'Categorias' : 'Produtos';
+    const periodoLabel = periodo === '30dias' ? 'Últimos 30 dias' : 'Todo o histórico';
 
     if (isLoading) {
         return <DashboardSkeleton />;
@@ -429,30 +429,30 @@ const Dashboard = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
                 <KPICard
-                    title="Receita Total"
+                    title="Receita"
                     displayValue={formatCurrency(animReceita)}
-                    subvalue={`${dadosCalculados.qtdVendas} venda${dadosCalculados.qtdVendas !== 1 ? 's' : ''} realizadas`}
+                    subvalue={`${periodoLabel} · ${dadosCalculados.qtdVendas} venda${dadosCalculados.qtdVendas !== 1 ? 's' : ''}`}
                     icon={TrendingUp}
                     variant="blue"
                 />
                 <KPICard
                     title="Lucro Líquido"
                     displayValue={formatCurrency(animLucro)}
-                    subvalue="Retorno real sobre vendas"
+                    subvalue={`Retorno real · ${periodoLabel}`}
                     icon={DollarSign}
                     variant="green"
                 />
                 <KPICard
                     title="Margem de Lucro"
                     displayValue={`${animMargem.toFixed(1)}%`}
-                    subvalue="Percentual sobre receita"
+                    subvalue={`Percentual sobre receita · ${periodoLabel}`}
                     icon={Percent}
                     variant="purple"
                 />
                 <KPICard
                     title="Markup Médio"
                     displayValue={`${animMarkup.toFixed(1)}%`}
-                    subvalue="Retorno sobre custo"
+                    subvalue={`Retorno sobre custo · ${periodoLabel}`}
                     icon={BarChart2}
                     variant="orange"
                 />

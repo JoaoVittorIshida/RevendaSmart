@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 const rateLimit = require('express-rate-limit');
+const verifyToken = require('../middleware/authMiddleware');
 
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
@@ -15,8 +16,17 @@ const registerLimiter = rateLimit({
     message: { message: 'Muitos cadastros realizados. Tente novamente após 1 hora.' }
 });
 
+const passwordChangeLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    skipSuccessfulRequests: true,
+    message: { message: 'Muitas tentativas de troca de senha. Tente novamente após 15 minutos.' }
+});
+
 router.post('/register', registerLimiter, authController.register);
 router.post('/login', loginLimiter, authController.login);
 router.get('/verify', authController.verifySession);
 router.post('/logout', authController.logout);
+router.patch('/conta', verifyToken, authController.updateAccount);
+router.patch('/senha', verifyToken, passwordChangeLimiter, authController.changePassword);
 module.exports = router;

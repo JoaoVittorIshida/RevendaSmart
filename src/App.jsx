@@ -1,32 +1,37 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, Package, Settings, LogOut, History, Menu, X, Sun, Moon } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { LayoutDashboard, ShoppingCart, Package, Settings, LogOut, History, Menu, X, Sun, Moon, BarChart3, Image, Database, UserRound } from 'lucide-react';
+import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { DataProvider } from './contexts/DataContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { ToastProvider } from './components/Toast';
 import { ConfirmProvider } from './components/ConfirmDialog';
-import Login from './pages/Auth/Login';
-import Cadastro from './pages/Auth/Cadastro';
-
-// Pages
-import Dashboard from './pages/Dashboard';
-import Vendas from './pages/Vendas';
-import HistoricoVendas from './pages/HistoricoVendas';
-import Estoque from './pages/Estoque';
-import EstoqueForm from './pages/EstoqueForm';
-import CentralCadastros from './pages/Cadastros/CentralCadastros';
-import Categorias from './pages/Cadastros/Categorias';
-import CanaisVenda from './pages/Cadastros/CanaisVenda';
-import CanaisCompra from './pages/Cadastros/CanaisCompra';
-import Produtos from './pages/Cadastros/Produtos';
-import ProdutoForm from './pages/Cadastros/ProdutoForm';
+const Login = lazy(() => import('./pages/Auth/Login'));
+const Cadastro = lazy(() => import('./pages/Auth/Cadastro'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Vendas = lazy(() => import('./pages/Vendas'));
+const HistoricoVendas = lazy(() => import('./pages/HistoricoVendas'));
+const Estoque = lazy(() => import('./pages/Estoque'));
+const EstoqueForm = lazy(() => import('./pages/EstoqueForm'));
+const CentralCadastros = lazy(() => import('./pages/Cadastros/CentralCadastros'));
+const Categorias = lazy(() => import('./pages/Cadastros/Categorias'));
+const CanaisVenda = lazy(() => import('./pages/Cadastros/CanaisVenda'));
+const CanaisCompra = lazy(() => import('./pages/Cadastros/CanaisCompra'));
+const Produtos = lazy(() => import('./pages/Cadastros/Produtos'));
+const ProdutoForm = lazy(() => import('./pages/Cadastros/ProdutoForm'));
+const MinhaConta = lazy(() => import('./pages/MinhaConta'));
+const Analises = lazy(() => import('./pages/Analises'));
+const Vitrine = lazy(() => import('./pages/Vitrine'));
+const Portabilidade = lazy(() => import('./pages/Portabilidade'));
 
 const NAV_ITEMS = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/vendas', icon: ShoppingCart, label: 'Nova Venda' },
   { to: '/historico-vendas', icon: History, label: 'Histórico' },
   { to: '/estoque', icon: Package, label: 'Estoque' },
+  { to: '/analises', icon: BarChart3, label: 'Análises' },
+  { to: '/vitrine', icon: Image, label: 'Vitrine' },
+  { to: '/dados', icon: Database, label: 'Dados' },
   { to: '/cadastros', icon: Settings, label: 'Cadastros' },
 ];
 
@@ -35,7 +40,7 @@ const SidebarLink = ({ to, icon: Icon, label, onClick }) => {
   const isActive = location.pathname === to || (to !== '/' && location.pathname.startsWith(to));
   return (
     <Link to={to} onClick={onClick} className={`sidebar-link ${isActive ? 'active' : ''}`}>
-      <Icon size={20} className={isActive ? 'text-white' : 'text-blue-400'} />
+      {React.createElement(Icon, { size: 20, className: isActive ? 'text-white' : 'text-blue-400' })}
       <span>{label}</span>
     </Link>
   );
@@ -61,11 +66,9 @@ const ThemeToggle = ({ className = '' }) => {
 
 const Layout = ({ children }) => {
   const { logout, usuario } = useAuth();
-  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const firstName = usuario ? usuario.nome.split(' ')[0] : 'Admin';
-
-  useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
+  const storeName = usuario?.nomeLoja?.trim() || 'RevendaSmart';
 
   useEffect(() => {
     document.body.style.overflow = sidebarOpen ? 'hidden' : '';
@@ -91,7 +94,7 @@ const Layout = ({ children }) => {
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white text-sm sidebar-brand-icon shrink-0">RS</div>
             <div className="min-w-0">
-              <span className="font-bold text-base tracking-tight text-white block leading-tight">RevendaSmart</span>
+              <span className="font-bold text-base tracking-tight text-white block leading-tight truncate" title={storeName}>{storeName}</span>
               <span className="text-xs text-blue-400 font-medium truncate block">{firstName}</span>
             </div>
           </div>
@@ -108,12 +111,15 @@ const Layout = ({ children }) => {
         </nav>
 
         {/* Footer — theme toggle + logout */}
-        <div className="pt-4 border-t border-white/10 flex items-center gap-2">
-          <ThemeToggle className="hover:bg-white/10 flex-shrink-0" />
-          <button onClick={logout} className="sidebar-logout flex-1">
-            <LogOut size={18} />
-            <span className="font-medium text-sm">Sair</span>
-          </button>
+        <div className="pt-4 border-t border-white/10 px-1">
+          <SidebarLink to="/minha-conta" icon={UserRound} label="Minha Conta" onClick={closeSidebar} />
+          <div className="flex items-center gap-2 pt-1">
+            <ThemeToggle className="hover:bg-white/10 flex-shrink-0" />
+            <button onClick={logout} className="sidebar-logout flex-1">
+              <LogOut size={18} />
+              <span className="font-medium text-sm">Sair</span>
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -127,7 +133,7 @@ const Layout = ({ children }) => {
           </button>
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-white text-xs sidebar-brand-icon">RS</div>
-            <span className="font-bold text-slate-800 dark:text-slate-100 text-sm">RevendaSmart</span>
+            <span className="font-bold text-slate-800 dark:text-slate-100 text-sm truncate max-w-44">{storeName}</span>
           </div>
           <ThemeToggle className="hover:bg-slate-100 dark:hover:bg-slate-700" />
         </header>
@@ -164,6 +170,7 @@ function App() {
           <ConfirmProvider>
             <DataProvider>
               <Router>
+                <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-500">Carregando...</div>}>
                 <Routes>
                   <Route path="/login" element={<Login />} />
                   <Route path="/cadastro" element={<Cadastro />} />
@@ -172,6 +179,10 @@ function App() {
                   <Route path="/historico-vendas" element={<PrivateRoute><HistoricoVendas /></PrivateRoute>} />
                   <Route path="/estoque" element={<PrivateRoute><Estoque /></PrivateRoute>} />
                   <Route path="/estoque/entrada" element={<PrivateRoute><EstoqueForm /></PrivateRoute>} />
+                  <Route path="/analises" element={<PrivateRoute><Analises /></PrivateRoute>} />
+                  <Route path="/vitrine" element={<PrivateRoute><Vitrine /></PrivateRoute>} />
+                  <Route path="/dados" element={<PrivateRoute><Portabilidade /></PrivateRoute>} />
+                  <Route path="/minha-conta" element={<PrivateRoute><MinhaConta /></PrivateRoute>} />
                   <Route path="/cadastros" element={<PrivateRoute><CentralCadastros /></PrivateRoute>} />
                   <Route path="/cadastros/categorias" element={<PrivateRoute><Categorias /></PrivateRoute>} />
                   <Route path="/cadastros/canais-venda" element={<PrivateRoute><CanaisVenda /></PrivateRoute>} />
@@ -180,6 +191,7 @@ function App() {
                   <Route path="/cadastros/produtos/novo" element={<PrivateRoute><ProdutoForm /></PrivateRoute>} />
                   <Route path="/cadastros/produtos/editar/:id" element={<PrivateRoute><ProdutoForm /></PrivateRoute>} />
                 </Routes>
+                </Suspense>
               </Router>
             </DataProvider>
           </ConfirmProvider>

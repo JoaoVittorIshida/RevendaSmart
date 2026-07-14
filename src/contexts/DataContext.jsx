@@ -1,296 +1,122 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useAuth } from './AuthContext';
 
 const DataContext = createContext();
+const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api`;
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useData = () => useContext(DataContext);
 
 export const DataProvider = ({ children }) => {
     const { usuario } = useAuth();
-    // Usa a variável de ambiente se existir, senão usa localhost
-    const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/api';
+    const currentUserId = useRef(usuario?.id || null);
+    const requestGeneration = useRef(0);
+    currentUserId.current = usuario?.id || null;
 
     const [produtos, setProdutos] = useState([]);
     const [itensEstoque, setItensEstoque] = useState([]);
     const [categorias, setCategorias] = useState([]);
     const [canaisVenda, setCanaisVenda] = useState([]);
     const [canaisCompra, setCanaisCompra] = useState([]);
+    const [vendas, setVendas] = useState([]);
+    const [anuncios, setAnuncios] = useState([]);
+    const [analises, setAnalises] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Helper para requisições com Auth via Cookie
     const authFetch = useCallback(async (endpoint, options = {}) => {
         if (!usuario) return null;
-
-        const headers = {
-            'Content-Type': 'application/json',
-            ...options.headers
-        };
-
-        const response = await fetch(`${API_URL}${endpoint}`, {
+        return fetch(`${API_URL}${endpoint}`, {
             ...options,
-            headers,
+            headers: { 'Content-Type': 'application/json', ...options.headers },
             credentials: 'include'
         });
-
-        if (response.status === 401) {
-            // Token expirado ou inválido
-            // Poderia chamar um logout aqui se tivesse acesso à função
-        }
-
-        return response;
-    }, [usuario, API_URL]);
+    }, [usuario]);
 
     const fetchData = useCallback(async () => {
         if (!usuario) return;
+        const userId = usuario.id;
+        const generation = ++requestGeneration.current;
         setIsLoading(true);
-
         try {
-            const [resProd, resEstoque, resCat, resCanalV, resCanalC] = await Promise.all([
-                authFetch('/produtos'),
-                authFetch('/estoque'),
-                authFetch('/dados/categorias'),
-                authFetch('/dados/canais-venda'),
-                authFetch('/dados/canais-compra')
+            const responses = await Promise.all([
+                authFetch('/produtos'), authFetch('/estoque'), authFetch('/dados/categorias'),
+                authFetch('/dados/canais-venda'), authFetch('/dados/canais-compra'), authFetch('/vendas'), authFetch('/anuncios'), authFetch('/analises')
             ]);
-
-            if (resProd?.ok) setProdutos(await resProd.json());
-            if (resEstoque?.ok) setItensEstoque(await resEstoque.json());
-            if (resCat?.ok) setCategorias(await resCat.json());
-            if (resCanalV?.ok) setCanaisVenda(await resCanalV.json());
-            if (resCanalC?.ok) setCanaisCompra(await resCanalC.json());
-
+            const [resProd, resStock, resCat, resSalesChannels, resBuyChannels, resSales, resAds, resAnalytics] = responses;
+            const payloads = await Promise.all(responses.map((response) => response?.ok ? response.json() : Promise.resolve(null)));
+            if (generation !== requestGeneration.current || currentUserId.current !== userId) return;
+            const [products, stock, categories, salesChannels, buyChannels, sales, ads, analytics] = payloads;
+            if (resProd?.ok) setProdutos(products);
+            if (resStock?.ok) setItensEstoque(stock);
+            if (resCat?.ok) setCategorias(categories);
+            if (resSalesChannels?.ok) setCanaisVenda(salesChannels);
+            if (resBuyChannels?.ok) setCanaisCompra(buyChannels);
+            if (resSales?.ok) setVendas(sales);
+            if (resAds?.ok) setAnuncios(ads);
+            if (resAnalytics?.ok) setAnalises(analytics);
         } catch (error) {
-            console.error("Erro ao carregar dados:", error);
+            if (generation === requestGeneration.current && currentUserId.current === userId) console.error('Erro ao carregar dados:', error);
         } finally {
-            setIsLoading(false);
+            if (generation === requestGeneration.current && currentUserId.current === userId) setIsLoading(false);
         }
     }, [authFetch, usuario]);
 
-    // Carregar dados ao entrar ou mudar usuário
     useEffect(() => {
+        requestGeneration.current += 1;
         if (usuario) {
             fetchData();
-        } else {
-            setProdutos([]);
-            setItensEstoque([]);
-            setCategorias([]);
-            setCanaisVenda([]);
-            setCanaisCompra([]);
-            setIsLoading(false);
+            return;
         }
-    }, [usuario, fetchData]);
+        setProdutos([]); setItensEstoque([]); setCategorias([]); setCanaisVenda([]); setCanaisCompra([]); setVendas([]); setAnuncios([]); setAnalises(null); setIsLoading(false);
+    }, [fetchData, usuario]);
 
-
-    // --- Actions: Produtos ---
-    const adicionarProduto = async (produto) => {
+    const request = async (endpoint, options, success) => {
         try {
-            const res = await authFetch('/produtos', {
-                method: 'POST',
-                body: JSON.stringify(produto)
-            });
-            if (res.ok) {
-                const novo = await res.json();
-                setProdutos(prev => [...prev, novo]);
-                return novo;
+            const res = await authFetch(endpoint, options);
+            const data = await res?.json().catch(() => ({}));
+            if (res?.ok) {
+                if (success) await success(data);
+                return { ok: true, ...data };
             }
-        } catch (error) { console.error(error); }
-    };
-
-    const atualizarProduto = async (id, dadosAtualizados) => {
-        try {
-            const res = await authFetch(`/produtos/${id}`, {
-                method: 'PUT',
-                body: JSON.stringify(dadosAtualizados)
-            });
-            if (res.ok) {
-                setProdutos(prev => prev.map(p => p.id === id ? { ...p, ...dadosAtualizados } : p));
-            }
-        } catch (error) { console.error(error); }
-    };
-
-    const removerProduto = async (id) => {
-        try {
-            const res = await authFetch(`/produtos/${id}`, { method: 'DELETE' });
-            if (res.ok) {
-                setProdutos(prev => prev.filter(p => p.id !== id));
-            }
-        } catch (error) { console.error(error); }
-    };
-
-    // --- Actions: Estoque ---
-    const adicionarEstoqueEmLote = async (dadosLote) => {
-        try {
-            const res = await authFetch('/estoque/entrada', {
-                method: 'POST',
-                body: JSON.stringify(dadosLote)
-            });
-            if (res.ok) {
-                // Como gera muitos IDs, recarregamos o estoque para simplificar
-                const resEstoque = await authFetch('/estoque');
-                if (resEstoque.ok) setItensEstoque(await resEstoque.json());
-                return { ok: true };
-            }
-            const data = await res.json().catch(() => ({}));
-            return { ok: false, message: data.message || 'Erro ao adicionar ao estoque.' };
+            return { ok: false, message: data.message || 'Nao foi possivel concluir a operacao.' };
         } catch (error) {
             console.error(error);
-            return { ok: false, message: 'Erro de conexão com o servidor.' };
+            return { ok: false, message: 'Erro de conexao com o servidor.' };
         }
     };
 
-    const venderItem = async (id, dadosVenda) => {
-        try {
-            const res = await authFetch(`/estoque/${id}/venda`, {
-                method: 'POST',
-                body: JSON.stringify(dadosVenda)
-            });
-            if (res.ok) {
-                setItensEstoque(prev => prev.map(item =>
-                    item.id === id
-                        ? { ...item, ...dadosVenda, status: 'vendido', dataVenda: dadosVenda.dataVenda }
-                        : item
-                ));
-            }
-        } catch (error) { console.error(error); }
-    };
+    const adicionarProduto = (produto) => request('/produtos', { method: 'POST', body: JSON.stringify(produto) }, async (novo) => setProdutos((items) => [...items, novo]));
+    const atualizarProduto = (id, dados) => request(`/produtos/${id}`, { method: 'PUT', body: JSON.stringify(dados) }, fetchData);
+    const removerProduto = (id) => request(`/produtos/${id}`, { method: 'DELETE' }, fetchData);
+    const adicionarEstoqueEmLote = (dados) => request('/estoque/entrada', { method: 'POST', body: JSON.stringify(dados) }, fetchData);
+    const venderItem = (id, dados) => request(`/estoque/${id}/venda`, { method: 'POST', body: JSON.stringify(dados) }, fetchData);
+    const cancelarVenda = (id) => request(`/estoque/${id}/venda`, { method: 'DELETE' }, fetchData);
+    const reservarItem = (id, dados) => request(`/estoque/${id}/reserva`, { method: 'POST', body: JSON.stringify(dados) }, fetchData);
+    const liberarReserva = (id) => request(`/estoque/${id}/reserva`, { method: 'DELETE' }, fetchData);
+    const removerItemEstoque = (id) => request(`/estoque/${id}`, { method: 'DELETE' }, fetchData);
+    const criarAnuncio = (dados) => request('/anuncios', { method: 'POST', body: JSON.stringify(dados) }, fetchData);
+    const atualizarAnuncio = (id, dados) => request(`/anuncios/${id}`, { method: 'PUT', body: JSON.stringify(dados) }, fetchData);
+    const desativarAnuncio = (id) => request(`/anuncios/${id}`, { method: 'DELETE' }, fetchData);
 
-    const cancelarVenda = async (id) => {
-        try {
-            const res = await authFetch(`/estoque/${id}/venda`, {
-                method: 'DELETE'
-            });
-
-            if (res.ok) {
-                setItensEstoque(prev => prev.map(item =>
-                    item.id === id
-                        ? {
-                            ...item,
-                            status: 'disponivel',
-                            precoVenda: null,
-                            canalVendaId: null,
-                            dataVenda: null
-                        }
-                        : item
-                ));
-                return { ok: true };
-            }
-
-            const data = await res.json().catch(() => ({}));
-            return { ok: false, message: data.message || 'Erro ao cancelar venda.' };
-        } catch (error) {
-            console.error(error);
-            return { ok: false, message: 'Erro de conexão com o servidor.' };
-        }
-    };
-
-    const atualizarItemEstoque = async (id, dados) => {
-        // Not implemented in backend yet
-        console.warn("Update Stock not fully implemented via API yet");
-    };
-
-    const removerItemEstoque = async (id) => {
-        try {
-            const res = await authFetch(`/estoque/${id}`, { method: 'DELETE' });
-            if (res.ok) {
-                setItensEstoque(prev => prev.filter(item => item.id !== id));
-                return { ok: true };
-            }
-            const data = await res.json().catch(() => ({}));
-            return { ok: false, message: data.message || 'Erro ao remover item do estoque.' };
-        } catch (error) { console.error(error); }
-        return { ok: false, message: 'Erro de conexão com o servidor.' };
-    };
-
-    // --- Actions: Auxiliares ---
-    // Helpers genéricos para evitar repetição
-    const createAux = async (endpoint, nome, setState) => {
-        try {
-            const res = await authFetch(endpoint, {
-                method: 'POST',
-                body: JSON.stringify({ nome })
-            });
-            if (res.ok) {
-                const novo = await res.json();
-                setState(prev => [...prev, novo]);
-                return novo; // retorna o item para auto-seleção
-            }
-        } catch (error) { console.error(error); }
-        return null;
-    };
-
-    const deleteAux = async (endpoint, id, setState) => {
-        try {
-            const res = await authFetch(`${endpoint}/${id}`, { method: 'DELETE' });
-            if (res.ok) {
-                setState(prev => prev.filter(item => item.id !== id));
-            }
-        } catch (error) { console.error(error); }
-    };
-
+    const createAux = (endpoint, nome, setState) => request(endpoint, { method: 'POST', body: JSON.stringify({ nome }) }, async (novo) => setState((items) => [...items, novo]));
+    const deleteAux = (endpoint, id, setState) => request(`${endpoint}/${id}`, { method: 'DELETE' }, async () => setState((items) => items.filter((item) => item.id !== id)));
     const adicionarCategoria = (nome) => createAux('/dados/categorias', nome, setCategorias);
     const removerCategoria = (id) => deleteAux('/dados/categorias', id, setCategorias);
-
     const adicionarCanalVenda = (nome) => createAux('/dados/canais-venda', nome, setCanaisVenda);
     const removerCanalVenda = (id) => deleteAux('/dados/canais-venda', id, setCanaisVenda);
-
     const adicionarCanalCompra = (nome) => createAux('/dados/canais-compra', nome, setCanaisCompra);
     const removerCanalCompra = (id) => deleteAux('/dados/canais-compra', id, setCanaisCompra);
 
-    // --- Helpers: Formatação ---
     const formatDate = (dateString) => {
-        if (!dateString) return '';
-        // Oculta a hora do usuário, mas previne que a exibição "volte 1 dia"
-        const safeString = dateString.includes('T') ? dateString : `${dateString}T12:00:00`;
-        return new Date(safeString).toLocaleDateString('pt-BR');
+        if (!dateString) return 'Nao informada';
+        const safe = dateString.includes('T') ? dateString : `${dateString}T12:00:00`;
+        return new Date(safe).toLocaleDateString('pt-BR');
     };
 
-    // --- Derived State: Vendas (Histórico) ---
-    // Mantém a mesma lógica de filtro do lado do cliente para performance imediata
-    const vendas = itensEstoque
-        .filter(item => item.status === 'vendido')
-        .map(item => {
-            const produto = produtos.find(p => p.id === item.produtoId);
-            const canal = canaisVenda.find(c => c.id === item.canalVendaId);
-            return {
-                id: item.id,
-                data: item.dataVenda,
-                produto: produto ? produto.nome : 'Produto excluído',
-                categoria: produto ? produto.categoria : 'Sem categoria',
-                canal: canal ? canal.nome : 'Não informado',
-                custo: Number(item.precoCusto),
-                valor: Number(item.precoVenda)
-            };
-        })
-        .sort((a, b) => new Date(b.data) - new Date(a.data));
-
-    const value = {
-        produtos,
-        itensEstoque,
-        vendas,
-        categorias,
-        canaisVenda,
-        canaisCompra,
-        isLoading,
-        adicionarProduto,
-        atualizarProduto,
-        removerProduto,
-        adicionarEstoqueEmLote,
-        venderItem,
-        cancelarVenda,
-        atualizarItemEstoque,
-        removerItemEstoque,
-        adicionarCategoria,
-        removerCategoria,
-        adicionarCanalVenda,
-        removerCanalVenda,
-        adicionarCanalCompra,
-        removerCanalCompra,
-        formatDate
-    };
-
-    return (
-        <DataContext.Provider value={value}>
-            {children}
-        </DataContext.Provider>
-    );
+    return <DataContext.Provider value={{
+        produtos, itensEstoque, categorias, canaisVenda, canaisCompra, vendas, anuncios, analises, isLoading,
+        adicionarProduto, atualizarProduto, removerProduto, adicionarEstoqueEmLote, venderItem, cancelarVenda,
+        reservarItem, liberarReserva, removerItemEstoque, adicionarCategoria, removerCategoria,
+        criarAnuncio, atualizarAnuncio, desativarAnuncio, adicionarCanalVenda, removerCanalVenda, adicionarCanalCompra, removerCanalCompra, fetchData, formatDate
+    }}>{children}</DataContext.Provider>;
 };

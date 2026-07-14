@@ -33,14 +33,17 @@ const SearchableSelect = ({ options, value, onChange, placeholder, isLoading }) 
     return (
         <div className="relative" ref={containerRef}>
             {/* Trigger */}
-            <div
+            <button
+                type="button"
                 className={`select w-full flex items-center justify-between cursor-pointer ${selectedOption ? 'text-slate-800 dark:text-slate-100' : 'text-slate-400 dark:text-slate-500'
                     }`}
                 onClick={() => setIsOpen(!isOpen)}
+                aria-haspopup="listbox"
+                aria-expanded={isOpen}
             >
                 <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
                 <ChevronDown size={18} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-            </div>
+            </button>
 
             {/* Dropdown */}
             {isOpen && (
@@ -63,24 +66,27 @@ const SearchableSelect = ({ options, value, onChange, placeholder, isLoading }) 
                     </div>
 
                     {/* Options */}
-                    <div className="max-h-60 overflow-y-auto pt-1">
+                    <div className="max-h-60 overflow-y-auto pt-1" role="listbox" aria-label={placeholder}>
                         {isLoading ? (
                             <div className="p-3 text-center text-sm text-slate-500 dark:text-slate-400">Carregando...</div>
                         ) : filteredOptions.length === 0 ? (
                             <div className="p-3 text-center text-sm text-slate-500 dark:text-slate-400">Nenhum produto encontrado.</div>
                         ) : (
                             filteredOptions.map((opt) => (
-                                <div
+                                <button
+                                    type="button"
                                     key={opt.value}
                                     onClick={() => { onChange(opt.value); setIsOpen(false); setSearchTerm(''); }}
                                     className={`px-4 py-2.5 text-sm cursor-pointer transition-colors flex items-center justify-between ${opt.value === value
                                         ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium'
                                         : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
                                         }`}
+                                    role="option"
+                                    aria-selected={opt.value === value}
                                 >
                                     {opt.label}
                                     {opt.value === value && <Check size={14} />}
-                                </div>
+                                </button>
                             ))
                         )}
                     </div>

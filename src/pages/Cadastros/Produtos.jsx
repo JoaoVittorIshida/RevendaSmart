@@ -20,14 +20,18 @@ const Produtos = () => {
             variant: 'danger',
         });
         if (ok) {
-            removerProduto(id);
+            const result = await removerProduto(id);
+            if (!result.ok) {
+                toast.error('Nao foi possivel excluir', result.message || 'Tente novamente.');
+                return;
+            }
             toast.success('Produto excluído', `"${nome}" foi removido com sucesso.`);
         }
     };
 
     const produtosFiltrados = produtos.filter(p =>
-        p.nome.toLowerCase().includes(termoBusca.toLowerCase()) ||
-        p.marca.toLowerCase().includes(termoBusca.toLowerCase())
+        String(p.nome || '').toLowerCase().includes(termoBusca.toLowerCase()) ||
+        String(p.marca || '').toLowerCase().includes(termoBusca.toLowerCase())
     );
 
     return (

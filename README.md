@@ -34,6 +34,16 @@ Veja de forma clara como está o seu negócio:
 
 ## 💻 Para os Desenvolvedores (Como rodar o projeto)
 
+### Atualizações do banco com segurança
+
+`database_schema.sql` é um baseline para bancos vazios e contém comandos destrutivos. Nunca o execute em uma base já utilizada. Para aplicar alterações incrementais, use na pasta `backend`:
+
+```bash
+npm run db:migrate
+```
+
+As migrations são rastreadas na tabela `schema_migrations` e podem ser conferidas sem alterar dados com `npm run db:migrate:dry-run`.
+
 Se você é desenvolvedor e quer testar ou contribuir com o projeto, a arquitetura é dividida em **Frontend (React)** e **Backend (Node.js)**. 
 
 ### O que usamos (Tech Stack)
@@ -59,7 +69,7 @@ npm install
 ```
 Crie um arquivo chamado `.env` na pasta `backend` e preencha com seus dados do banco (use o `.env.example` como base, se houver, ou cole o texto abaixo):
 ```env
-PORT=3000
+PORT=3001
 DB_HOST=localhost
 DB_USER=root
 DB_PASSWORD=sua_senha

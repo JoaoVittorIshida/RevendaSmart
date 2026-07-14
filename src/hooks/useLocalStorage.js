@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 function useLocalStorage(key, initialValue) {
     // Get from local storage then parse stored json or return initialValue
@@ -16,10 +16,6 @@ function useLocalStorage(key, initialValue) {
     };
 
     const [storedValue, setStoredValue] = useState(readValue);
-
-    useEffect(() => {
-        setStoredValue(readValue());
-    }, [key]);
 
     const setValue = (value) => {
         try {
