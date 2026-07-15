@@ -58,3 +58,23 @@ test('client data requests discard stale sessions and imports have a total-unit 
     assert.match(portability, /MAX_IMPORT_UNITS = 5000/);
     assert.match(portability, /totalUnits > MAX_IMPORT_UNITS/);
 });
+
+test('analytics preserves source snapshots and aggregates by the selected period', () => {
+    const stock = read('backend', 'controllers', 'stockController.js');
+    const analytics = read('backend', 'controllers', 'analyticsController.js');
+    const portability = read('backend', 'controllers', 'portabilityController.js');
+    assert.match(stock, /canal_compra_nome/);
+    assert.match(stock, /origem, canal_compra_id, canal_compra_nome/);
+    assert.match(analytics, /dados_incompletos = 0/);
+    assert.match(analytics, /DATE_ADD\(\?, INTERVAL 1 DAY\)/);
+    assert.match(analytics, /porCanalVenda/);
+    assert.match(analytics, /porCanalCompra/);
+    assert.match(analytics, /matrizCompraVenda/);
+    assert.match(analytics, /parados30Mais/);
+    assert.match(analytics, /parados_30_59/);
+    assert.match(analytics, /parados_60_89/);
+    assert.match(analytics, /parados_90_mais/);
+    assert.match(analytics, /AVG\(GREATEST\(0, DATEDIFF\(v\.data_venda, e\.data_entrada\)\)\)/);
+    assert.match(portability, /canal_compra_nome/);
+    assert.match(portability, /dados_incompletos/);
+});

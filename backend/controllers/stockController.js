@@ -93,10 +93,11 @@ const sellItem = async (req, res) => {
 
         connection = await db.getConnection();
         await connection.beginTransaction();
-        const [items] = await connection.query(`SELECT e.*, p.nome AS produto_nome, p.categoria AS categoria_nome, cv.nome AS canal_nome
+        const [items] = await connection.query(`SELECT e.*, p.nome AS produto_nome, p.categoria AS categoria_nome, cv.nome AS canal_nome, cc.nome AS canal_compra_nome
             FROM estoque e
             LEFT JOIN produtos p ON p.id = e.produto_id
             LEFT JOIN canais_venda cv ON cv.id = ? AND cv.usuario_id = e.usuario_id
+            LEFT JOIN canais_compra cc ON cc.id = e.canal_compra_id AND cc.usuario_id = e.usuario_id
             WHERE e.id = ? AND e.usuario_id = ? FOR UPDATE`, [canalVendaId || null, id, req.user.id]);
         if (!items.length) throw Object.assign(new Error('Item nao encontrado.'), { status: 404 });
         const item = items[0];
@@ -104,8 +105,8 @@ const sellItem = async (req, res) => {
         if (canalVendaId && !item.canal_nome) throw Object.assign(new Error('Canal de venda invalido.'), { status: 400 });
 
         const saleId = randomUUID();
-        await connection.query(`INSERT INTO vendas (id, usuario_id, estoque_id, produto_id, produto_nome, categoria_nome, canal_venda_id, canal_nome, preco_custo, valor_bruto, taxa_plataforma, frete_vendedor, valor_liquido, data_venda)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [saleId, req.user.id, item.id, item.produto_id, item.produto_nome || 'Produto removido', item.categoria_nome || 'Sem categoria', canalVendaId || null, item.canal_nome || 'Nao informado', item.preco_custo, gross, fee, shipping, net, saleDate]);
+        await connection.query(`INSERT INTO vendas (id, usuario_id, estoque_id, produto_id, produto_nome, categoria_nome, origem, canal_compra_id, canal_compra_nome, canal_venda_id, canal_nome, preco_custo, valor_bruto, taxa_plataforma, frete_vendedor, valor_liquido, data_venda)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [saleId, req.user.id, item.id, item.produto_id, item.produto_nome || 'Produto removido', item.categoria_nome || 'Sem categoria', item.origem || null, item.canal_compra_id || null, item.canal_compra_nome || 'Não informado', canalVendaId || null, item.canal_nome || 'Nao informado', item.preco_custo, gross, fee, shipping, net, saleDate]);
         await connection.query("UPDATE estoque SET status = 'vendido', preco_venda = ?, canal_venda_id = ?, data_venda = ?, reservado_ate = NULL, reserva_observacao = NULL WHERE id = ? AND usuario_id = ?", [net, canalVendaId || null, saleDate, id, req.user.id]);
         await connection.query('UPDATE anuncios SET ativo = 0 WHERE estoque_id = ? AND usuario_id = ?', [id, req.user.id]);
         await connection.commit();
