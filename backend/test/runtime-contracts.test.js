@@ -69,6 +69,9 @@ test('analytics preserves source snapshots and aggregates by the selected period
     assert.match(analytics, /DATE_ADD\(\?, INTERVAL 1 DAY\)/);
     assert.match(analytics, /porCanalVenda/);
     assert.match(analytics, /porCanalCompra/);
+    assert.match(analytics, /porCategoria/);
+    assert.match(analytics, /categoria_nome/);
+    assert.match(analytics, /inventoryByCategory/);
     assert.match(analytics, /matrizCompraVenda/);
     assert.match(analytics, /parados30Mais/);
     assert.match(analytics, /parados_30_59/);

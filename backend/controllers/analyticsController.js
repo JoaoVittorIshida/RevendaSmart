@@ -100,9 +100,11 @@ const getAnalytics = async (req, res) => {
             [salesChannels],
             [purchaseChannels],
             [origins],
+            [categories],
             [matrix],
             [inventoryByOrigin],
             [inventoryByPurchaseChannel],
+            [inventoryByCategory],
             [inventorySummaryRows],
             [ranking],
             [fastest]
@@ -120,7 +122,12 @@ const getAnalytics = async (req, res) => {
                 COALESCE(AVG(GREATEST(0, DATEDIFF(v.data_venda, e.data_entrada))), 0) AS giro_medio
                 FROM vendas v LEFT JOIN estoque e ON e.id = v.estoque_id AND e.usuario_id = v.usuario_id
                 ${salesFilters(period, 'v.')}
-                GROUP BY v.origem ORDER BY lucro_liquido DESC, vendas DESC`, currentParams),
+                GROUP BY COALESCE(NULLIF(v.origem, ''), 'Não informado') ORDER BY lucro_liquido DESC, vendas DESC`, currentParams),
+            db.query(`SELECT COALESCE(NULLIF(v.categoria_nome, ''), 'Sem categoria') AS nome, ${performanceFields('v.')},
+                COALESCE(AVG(GREATEST(0, DATEDIFF(v.data_venda, e.data_entrada))), 0) AS giro_medio
+                FROM vendas v LEFT JOIN estoque e ON e.id = v.estoque_id AND e.usuario_id = v.usuario_id
+                ${salesFilters(period, 'v.')}
+                GROUP BY COALESCE(NULLIF(v.categoria_nome, ''), 'Sem categoria') ORDER BY lucro_liquido DESC, vendas DESC`, currentParams),
             db.query(`SELECT
                 COALESCE(NULLIF(canal_compra_nome, ''), 'Não informado') AS canal_compra,
                 COALESCE(NULLIF(canal_nome, ''), 'Não informado') AS canal_venda,
@@ -136,7 +143,7 @@ const getAnalytics = async (req, res) => {
                 SUM(data_entrada <= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 60 DAY) AND data_entrada > DATE_SUB(UTC_TIMESTAMP(), INTERVAL 90 DAY)) AS parados_60_89,
                 SUM(data_entrada <= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 90 DAY)) AS parados_90_mais
                 FROM estoque WHERE usuario_id = ? AND status IN ('disponivel', 'reservado')
-                GROUP BY origem ORDER BY capital DESC`, [userId]),
+                GROUP BY COALESCE(NULLIF(origem, ''), 'Não informado') ORDER BY capital DESC`, [userId]),
             db.query(`SELECT COALESCE(NULLIF(cc.nome, ''), 'Não informado') AS nome,
                 COUNT(*) AS unidades, COALESCE(SUM(e.preco_custo), 0) AS capital,
                 SUM(e.data_entrada <= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY) AND e.data_entrada > DATE_SUB(UTC_TIMESTAMP(), INTERVAL 60 DAY)) AS parados_30_59,
@@ -145,6 +152,14 @@ const getAnalytics = async (req, res) => {
                 FROM estoque e LEFT JOIN canais_compra cc ON cc.id = e.canal_compra_id AND cc.usuario_id = e.usuario_id
                 WHERE e.usuario_id = ? AND e.status IN ('disponivel', 'reservado')
                 GROUP BY e.canal_compra_id, cc.nome ORDER BY capital DESC`, [userId]),
+            db.query(`SELECT COALESCE(NULLIF(p.categoria, ''), 'Sem categoria') AS nome,
+                COUNT(*) AS unidades, COALESCE(SUM(e.preco_custo), 0) AS capital,
+                SUM(e.data_entrada <= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY) AND e.data_entrada > DATE_SUB(UTC_TIMESTAMP(), INTERVAL 60 DAY)) AS parados_30_59,
+                SUM(e.data_entrada <= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 60 DAY) AND e.data_entrada > DATE_SUB(UTC_TIMESTAMP(), INTERVAL 90 DAY)) AS parados_60_89,
+                SUM(e.data_entrada <= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 90 DAY)) AS parados_90_mais
+                FROM estoque e LEFT JOIN produtos p ON p.id = e.produto_id AND p.usuario_id = e.usuario_id
+                WHERE e.usuario_id = ? AND e.status IN ('disponivel', 'reservado')
+                GROUP BY COALESCE(NULLIF(p.categoria, ''), 'Sem categoria') ORDER BY capital DESC`, [userId]),
             db.query(`SELECT COUNT(*) AS unidades, COALESCE(SUM(preco_custo), 0) AS capital,
                 SUM(data_entrada <= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY) AND data_entrada > DATE_SUB(UTC_TIMESTAMP(), INTERVAL 60 DAY)) AS parados_30_59,
                 SUM(data_entrada <= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 60 DAY) AND data_entrada > DATE_SUB(UTC_TIMESTAMP(), INTERVAL 90 DAY)) AS parados_60_89,
@@ -175,6 +190,7 @@ const getAnalytics = async (req, res) => {
             porCanalVenda: salesChannels.map(mapPerformance),
             porCanalCompra: purchaseChannels.map(mapPerformance),
             porOrigem: origins.map(mapPerformance),
+            porCategoria: categories.map(mapPerformance),
             matrizCompraVenda: matrix.map((row) => ({
                 canalCompra: row.canal_compra,
                 canalVenda: row.canal_venda,
@@ -191,7 +207,8 @@ const getAnalytics = async (req, res) => {
                 parados60a89: number(inventory.parados_60_89),
                 parados90Mais: number(inventory.parados_90_mais),
                 porOrigem: inventoryByOrigin.map((row) => ({ nome: row.nome || 'Não informado', unidades: number(row.unidades), capital: number(row.capital), parados30a59: number(row.parados_30_59), parados60a89: number(row.parados_60_89), parados90Mais: number(row.parados_90_mais) })),
-                porCanalCompra: inventoryByPurchaseChannel.map((row) => ({ nome: row.nome || 'Não informado', unidades: number(row.unidades), capital: number(row.capital), parados30a59: number(row.parados_30_59), parados60a89: number(row.parados_60_89), parados90Mais: number(row.parados_90_mais) }))
+                porCanalCompra: inventoryByPurchaseChannel.map((row) => ({ nome: row.nome || 'Não informado', unidades: number(row.unidades), capital: number(row.capital), parados30a59: number(row.parados_30_59), parados60a89: number(row.parados_60_89), parados90Mais: number(row.parados_90_mais) })),
+                porCategoria: inventoryByCategory.map((row) => ({ nome: row.nome || 'Sem categoria', unidades: number(row.unidades), capital: number(row.capital), parados30a59: number(row.parados_30_59), parados60a89: number(row.parados_60_89), parados90Mais: number(row.parados_90_mais) }))
             },
             maisLucrativos: ranking.map((row) => ({ nome: row.nome, vendas: number(row.vendas), lucro: number(row.lucro) })),
             vendasMaisRapidas: fastest.map((row) => ({ id: row.id, nome: row.nome, valor: number(row.valor), dias: number(row.dias) }))
