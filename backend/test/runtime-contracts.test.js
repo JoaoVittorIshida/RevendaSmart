@@ -19,7 +19,8 @@ test('critical multi-tenant and concurrency guards are present', () => {
     const stock = read('backend', 'controllers', 'stockController.js');
     const products = read('backend', 'controllers', 'productsController.js');
     assert.match(stock, /canais_compra WHERE id = \? AND usuario_id = \?/);
-    assert.match(stock, /SELECT status FROM estoque WHERE id = \? AND usuario_id = \? FOR UPDATE/);
+    assert.match(stock, /SELECT produto_id, status FROM estoque WHERE id = \? AND usuario_id = \? FOR UPDATE/);
+    assert.match(stock, /status = 'disponivel' LIMIT 1 FOR UPDATE/);
     assert.doesNotMatch(stock, /reservado_ate <= UTC_TIMESTAMP\(\)/);
     assert.match(stock, /AND status = 'reservado'/);
     assert.match(products, /SELECT id FROM produtos WHERE id = \? AND usuario_id = \? FOR UPDATE/);
@@ -80,4 +81,17 @@ test('analytics preserves source snapshots and aggregates by the selected period
     assert.match(analytics, /AVG\(GREATEST\(0, DATEDIFF\(v\.data_venda, e\.data_entrada\)\)\)/);
     assert.match(portability, /canal_compra_nome/);
     assert.match(portability, /dados_incompletos/);
+});
+
+test('public showcase exposes an explicit DTO and account name is protected while published', () => {
+    const showcase = read('backend', 'controllers', 'showcaseController.js');
+    const account = read('backend', 'controllers', 'authController.js');
+    const ads = read('backend', 'controllers', 'adsController.js');
+    assert.match(showcase, /c\.slug = \? AND c\.publicada = 1/);
+    assert.match(showcase, /Cache-Control', 'no-store/);
+    assert.doesNotMatch(showcase, /SELECT \*/);
+    assert.doesNotMatch(showcase, /senha|token_version/);
+    assert.match(account, /Despublique a Vitrine antes de apagar o nome da loja/);
+    assert.match(ads, /uq_anuncios_usuario_produto|ER_DUP_ENTRY/);
+    assert.match(ads, /p\.usuario_id = a\.usuario_id/);
 });

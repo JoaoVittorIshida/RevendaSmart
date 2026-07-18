@@ -1,0 +1,13 @@
+CREATE TABLE IF NOT EXISTS vitrine_configuracoes (
+  usuario_id VARCHAR(36) NOT NULL,
+  slug VARCHAR(120) DEFAULT NULL,
+  publicada TINYINT(1) NOT NULL DEFAULT 0,
+  whatsapp VARCHAR(13) DEFAULT NULL,
+  cidade VARCHAR(100) DEFAULT NULL,
+  estado CHAR(2) DEFAULT NULL,
+  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (usuario_id),
+  UNIQUE KEY uq_vitrine_configuracoes_slug (slug),
+  CONSTRAINT fk_vitrine_configuracoes_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

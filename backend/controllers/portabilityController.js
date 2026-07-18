@@ -28,14 +28,15 @@ const exportSales = async (req, res) => {
 const backup = async (req, res) => {
     try {
         const userId = req.user.id;
-        const [categorias, canaisVenda, canaisCompra, produtos, estoque, vendas, anuncios] = await Promise.all([
+        const [categorias, canaisVenda, canaisCompra, produtos, estoque, vendas, anuncios, vitrineConfiguracoes] = await Promise.all([
             db.query('SELECT id, nome FROM categorias WHERE usuario_id = ? ORDER BY nome', [userId]),
             db.query('SELECT id, nome FROM canais_venda WHERE usuario_id = ? ORDER BY nome', [userId]),
             db.query('SELECT id, nome FROM canais_compra WHERE usuario_id = ? ORDER BY nome', [userId]),
             db.query('SELECT id, nome, marca, categoria, tipo, foto, criado_em, atualizado_em FROM produtos WHERE usuario_id = ? ORDER BY nome', [userId]),
             db.query('SELECT id, produto_id, preco_custo, canal_compra_id, origem, status, data_entrada, preco_venda, canal_venda_id, data_venda, reservado_ate, reserva_observacao FROM estoque WHERE usuario_id = ? ORDER BY data_entrada DESC', [userId]),
             db.query('SELECT id, estoque_id, produto_id, produto_nome, categoria_nome, origem, canal_compra_id, canal_compra_nome, canal_venda_id, canal_nome, preco_custo, valor_bruto, taxa_plataforma, frete_vendedor, valor_liquido, dados_incompletos, data_venda, status, cancelada_em, criado_em, atualizado_em FROM vendas WHERE usuario_id = ? ORDER BY data_venda DESC', [userId]),
-            db.query('SELECT id, estoque_id, preco_anuncio, detalhes, ativo, criado_em, atualizado_em FROM anuncios WHERE usuario_id = ? ORDER BY criado_em DESC', [userId]),
+            db.query('SELECT id, estoque_id, produto_id, nome_anuncio, preco_anuncio, descricao, link_olx, link_facebook, link_mercado_livre, link_outros, ativo, criado_em, atualizado_em FROM anuncios WHERE usuario_id = ? ORDER BY criado_em DESC', [userId]),
+            db.query('SELECT slug, publicada, whatsapp, cidade, estado, criado_em, atualizado_em FROM vitrine_configuracoes WHERE usuario_id = ?', [userId]),
         ]);
         const files = [
             ['categorias.csv', ['ID', 'Nome'], categorias[0].map((row) => [row.id, row.nome])],
@@ -44,7 +45,8 @@ const backup = async (req, res) => {
             ['produtos.csv', ['ID', 'Produto', 'Marca', 'Categoria', 'Tipo', 'Foto', 'Criado em', 'Atualizado em'], produtos[0].map((row) => [row.id, row.nome, row.marca, row.categoria, row.tipo, row.foto, row.criado_em, row.atualizado_em])],
             ['estoque.csv', ['ID', 'ID do produto', 'Custo', 'ID canal de compra', 'Origem', 'Status', 'Data de entrada', 'Preço de venda antigo', 'ID canal de venda antigo', 'Data de venda antiga', 'Reservado até', 'Observação da reserva'], estoque[0].map((row) => [row.id, row.produto_id, row.preco_custo, row.canal_compra_id, row.origem, row.status, row.data_entrada, row.preco_venda, row.canal_venda_id, row.data_venda, row.reservado_ate, row.reserva_observacao])],
             ['vendas.csv', ['ID', 'ID do estoque', 'ID do produto', 'Produto', 'Categoria', 'Origem', 'ID canal de compra', 'Canal de compra', 'ID canal de venda', 'Canal de venda', 'Custo', 'Valor bruto', 'Taxa da plataforma', 'Frete do vendedor', 'Valor líquido', 'Dados incompletos', 'Data da venda', 'Status', 'Cancelada em', 'Criada em', 'Atualizada em'], vendas[0].map((row) => [row.id, row.estoque_id, row.produto_id, row.produto_nome, row.categoria_nome, row.origem, row.canal_compra_id, row.canal_compra_nome, row.canal_venda_id, row.canal_nome, row.preco_custo, row.valor_bruto, row.taxa_plataforma, row.frete_vendedor, row.valor_liquido, row.dados_incompletos, row.data_venda, row.status, row.cancelada_em, row.criado_em, row.atualizado_em])],
-            ['anuncios.csv', ['ID', 'ID do estoque', 'Preço anunciado', 'Detalhes', 'Ativo', 'Criado em', 'Atualizado em'], anuncios[0].map((row) => [row.id, row.estoque_id, row.preco_anuncio, row.detalhes, row.ativo, row.criado_em, row.atualizado_em])],
+            ['anuncios.csv', ['ID', 'ID do estoque', 'ID do produto', 'Nome do anúncio', 'Preço anunciado', 'Descrição HTML', 'Link OLX', 'Link Facebook', 'Link Mercado Livre', 'Link outros', 'Ativo', 'Criado em', 'Atualizado em'], anuncios[0].map((row) => [row.id, row.estoque_id, row.produto_id, row.nome_anuncio, row.preco_anuncio, row.descricao, row.link_olx, row.link_facebook, row.link_mercado_livre, row.link_outros, row.ativo, row.criado_em, row.atualizado_em])],
+            ['vitrine-configuracoes.csv', ['Slug', 'Publicada', 'WhatsApp', 'Cidade', 'Estado', 'Criada em', 'Atualizada em'], vitrineConfiguracoes[0].map((row) => [row.slug, row.publicada, row.whatsapp, row.cidade, row.estado, row.criado_em, row.atualizado_em])],
         ];
 
         res.attachment('revendasmart-backup-completo.zip');

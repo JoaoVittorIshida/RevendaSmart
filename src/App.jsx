@@ -23,6 +23,7 @@ const MinhaConta = lazy(() => import('./pages/MinhaConta'));
 const Analises = lazy(() => import('./pages/Analises'));
 const Vitrine = lazy(() => import('./pages/Vitrine'));
 const Portabilidade = lazy(() => import('./pages/Portabilidade'));
+const VitrinePublica = lazy(() => import('./pages/VitrinePublica'));
 
 const NAV_ITEMS = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -190,6 +191,7 @@ function App() {
                   <Route path="/cadastros/produtos" element={<PrivateRoute><Produtos /></PrivateRoute>} />
                   <Route path="/cadastros/produtos/novo" element={<PrivateRoute><ProdutoForm /></PrivateRoute>} />
                   <Route path="/cadastros/produtos/editar/:id" element={<PrivateRoute><ProdutoForm /></PrivateRoute>} />
+                  <Route path="/:slug" element={<VitrinePublica />} />
                 </Routes>
                 </Suspense>
               </Router>

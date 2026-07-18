@@ -33,6 +33,7 @@ app.use('/api/estoque', require('./routes/stockRoutes'));
 app.use('/api/dados', require('./routes/dataRoutes'));
 app.use('/api/vendas', require('./routes/salesRoutes'));
 app.use('/api/anuncios', require('./routes/adsRoutes'));
+app.use('/api/vitrine', require('./routes/publicShowcaseRoutes'));
 app.use('/api/portabilidade', require('./routes/portabilityRoutes'));
 app.use('/api/analises', require('./routes/analyticsRoutes'));
 

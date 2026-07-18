@@ -27,6 +27,11 @@ const validateStockInput = ({ quantidade, precoCusto, origem }) => {
     return null;
 };
 
+const deactivateShowcaseIfUnavailable = async (connection, userId, productId) => {
+    const [available] = await connection.query("SELECT id FROM estoque WHERE produto_id = ? AND usuario_id = ? AND status = 'disponivel' LIMIT 1 FOR UPDATE", [productId, userId]);
+    if (!available.length) await connection.query('UPDATE anuncios SET ativo = 0 WHERE produto_id = ? AND usuario_id = ?', [productId, userId]);
+};
+
 const getStock = async (req, res) => {
     try {
         const [rows] = await db.query('SELECT * FROM estoque WHERE usuario_id = ?', [req.user.id]);
@@ -108,7 +113,7 @@ const sellItem = async (req, res) => {
         await connection.query(`INSERT INTO vendas (id, usuario_id, estoque_id, produto_id, produto_nome, categoria_nome, origem, canal_compra_id, canal_compra_nome, canal_venda_id, canal_nome, preco_custo, valor_bruto, taxa_plataforma, frete_vendedor, valor_liquido, data_venda)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [saleId, req.user.id, item.id, item.produto_id, item.produto_nome || 'Produto removido', item.categoria_nome || 'Sem categoria', item.origem || null, item.canal_compra_id || null, item.canal_compra_nome || 'Não informado', canalVendaId || null, item.canal_nome || 'Nao informado', item.preco_custo, gross, fee, shipping, net, saleDate]);
         await connection.query("UPDATE estoque SET status = 'vendido', preco_venda = ?, canal_venda_id = ?, data_venda = ?, reservado_ate = NULL, reserva_observacao = NULL WHERE id = ? AND usuario_id = ?", [net, canalVendaId || null, saleDate, id, req.user.id]);
-        await connection.query('UPDATE anuncios SET ativo = 0 WHERE estoque_id = ? AND usuario_id = ?', [id, req.user.id]);
+        await deactivateShowcaseIfUnavailable(connection, req.user.id, item.produto_id);
         await connection.commit();
         res.json({ message: 'Venda registrada com sucesso!', vendaId: saleId, valorLiquido: net });
     } catch (error) {
@@ -125,7 +130,7 @@ const cancelSale = async (req, res) => {
     try {
         connection = await db.getConnection();
         await connection.beginTransaction();
-        const [items] = await connection.query('SELECT id, status FROM estoque WHERE id = ? AND usuario_id = ? FOR UPDATE', [req.params.id, req.user.id]);
+        const [items] = await connection.query('SELECT id, produto_id, status FROM estoque WHERE id = ? AND usuario_id = ? FOR UPDATE', [req.params.id, req.user.id]);
         if (!items.length) throw Object.assign(new Error('Item nao encontrado.'), { status: 404 });
         if (items[0].status !== 'vendido') throw Object.assign(new Error('Apenas itens vendidos podem ter a venda cancelada.'), { status: 400 });
         const [sales] = await connection.query("SELECT id FROM vendas WHERE estoque_id = ? AND usuario_id = ? AND status = 'concluida' ORDER BY data_venda DESC, criado_em DESC LIMIT 1 FOR UPDATE", [req.params.id, req.user.id]);
@@ -152,10 +157,10 @@ const reserveItem = async (req, res) => {
         if (observation.length > 280) return res.status(400).json({ message: 'A observacao pode ter no maximo 280 caracteres.' });
         connection = await db.getConnection();
         await connection.beginTransaction();
-        const [items] = await connection.query('SELECT id, status FROM estoque WHERE id = ? AND usuario_id = ? FOR UPDATE', [req.params.id, req.user.id]);
+        const [items] = await connection.query('SELECT id, produto_id, status FROM estoque WHERE id = ? AND usuario_id = ? FOR UPDATE', [req.params.id, req.user.id]);
         if (!items.length || items[0].status !== 'disponivel') throw Object.assign(new Error('O item nao esta disponivel para reserva.'), { status: 409 });
         await connection.query("UPDATE estoque SET status = 'reservado', reservado_ate = ?, reserva_observacao = ? WHERE id = ? AND usuario_id = ?", [until, observation || null, req.params.id, req.user.id]);
-        await connection.query('UPDATE anuncios SET ativo = 0 WHERE estoque_id = ? AND usuario_id = ?', [req.params.id, req.user.id]);
+        await deactivateShowcaseIfUnavailable(connection, req.user.id, items[0].produto_id);
         await connection.commit();
         res.json({ message: 'Item reservado com sucesso.' });
     } catch (error) {
@@ -183,10 +188,11 @@ const deleteStockItem = async (req, res) => {
     try {
         connection = await db.getConnection();
         await connection.beginTransaction();
-        const [items] = await connection.query('SELECT status FROM estoque WHERE id = ? AND usuario_id = ? FOR UPDATE', [req.params.id, req.user.id]);
+        const [items] = await connection.query('SELECT produto_id, status FROM estoque WHERE id = ? AND usuario_id = ? FOR UPDATE', [req.params.id, req.user.id]);
         if (!items.length) throw Object.assign(new Error('Item nao encontrado.'), { status: 404 });
         if (items[0].status === 'vendido') throw Object.assign(new Error('Itens vendidos nao podem ser excluidos; cancele a venda primeiro.'), { status: 409 });
         await connection.query("DELETE FROM estoque WHERE id = ? AND usuario_id = ? AND status <> 'vendido'", [req.params.id, req.user.id]);
+        await deactivateShowcaseIfUnavailable(connection, req.user.id, items[0].produto_id);
         await connection.commit();
         res.json({ message: 'Item removido do estoque.' });
     } catch (error) {

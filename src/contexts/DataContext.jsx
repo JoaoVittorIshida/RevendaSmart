@@ -20,6 +20,7 @@ export const DataProvider = ({ children }) => {
     const [canaisCompra, setCanaisCompra] = useState([]);
     const [vendas, setVendas] = useState([]);
     const [anuncios, setAnuncios] = useState([]);
+    const [vitrineConfig, setVitrineConfig] = useState({ publicada: false, slug: '', whatsapp: '', cidade: '', estado: '' });
     const [isLoading, setIsLoading] = useState(true);
 
     const authFetch = useCallback(async (endpoint, options = {}) => {
@@ -39,12 +40,12 @@ export const DataProvider = ({ children }) => {
         try {
             const responses = await Promise.all([
                 authFetch('/produtos'), authFetch('/estoque'), authFetch('/dados/categorias'),
-                authFetch('/dados/canais-venda'), authFetch('/dados/canais-compra'), authFetch('/vendas'), authFetch('/anuncios')
+                authFetch('/dados/canais-venda'), authFetch('/dados/canais-compra'), authFetch('/vendas'), authFetch('/anuncios'), authFetch('/anuncios/configuracao')
             ]);
-            const [resProd, resStock, resCat, resSalesChannels, resBuyChannels, resSales, resAds] = responses;
+            const [resProd, resStock, resCat, resSalesChannels, resBuyChannels, resSales, resAds, resShowcase] = responses;
             const payloads = await Promise.all(responses.map((response) => response?.ok ? response.json() : Promise.resolve(null)));
             if (generation !== requestGeneration.current || currentUserId.current !== userId) return;
-            const [products, stock, categories, salesChannels, buyChannels, sales, ads] = payloads;
+            const [products, stock, categories, salesChannels, buyChannels, sales, ads, showcase] = payloads;
             if (resProd?.ok) setProdutos(products);
             if (resStock?.ok) setItensEstoque(stock);
             if (resCat?.ok) setCategorias(categories);
@@ -52,6 +53,7 @@ export const DataProvider = ({ children }) => {
             if (resBuyChannels?.ok) setCanaisCompra(buyChannels);
             if (resSales?.ok) setVendas(sales);
             if (resAds?.ok) setAnuncios(ads);
+            if (resShowcase?.ok) setVitrineConfig(showcase);
         } catch (error) {
             if (generation === requestGeneration.current && currentUserId.current === userId) console.error('Erro ao carregar dados:', error);
         } finally {
@@ -65,7 +67,7 @@ export const DataProvider = ({ children }) => {
             fetchData();
             return;
         }
-        setProdutos([]); setItensEstoque([]); setCategorias([]); setCanaisVenda([]); setCanaisCompra([]); setVendas([]); setAnuncios([]); setIsLoading(false);
+        setProdutos([]); setItensEstoque([]); setCategorias([]); setCanaisVenda([]); setCanaisCompra([]); setVendas([]); setAnuncios([]); setVitrineConfig({ publicada: false, slug: '', whatsapp: '', cidade: '', estado: '' }); setIsLoading(false);
     }, [fetchData, usuario]);
 
     const request = async (endpoint, options, success) => {
@@ -103,6 +105,8 @@ export const DataProvider = ({ children }) => {
     const criarAnuncio = (dados) => request('/anuncios', { method: 'POST', body: JSON.stringify(dados) }, fetchData);
     const atualizarAnuncio = (id, dados) => request(`/anuncios/${id}`, { method: 'PUT', body: JSON.stringify(dados) }, fetchData);
     const desativarAnuncio = (id) => request(`/anuncios/${id}`, { method: 'DELETE' }, fetchData);
+    const salvarConfiguracaoVitrine = (dados) => request('/anuncios/configuracao', { method: 'PATCH', body: JSON.stringify(dados) }, async (result) => setVitrineConfig(result.configuracao));
+    const alterarPublicacaoVitrine = (publicada) => request('/anuncios/publicacao', { method: 'PATCH', body: JSON.stringify({ publicada }) }, async (result) => setVitrineConfig(result.configuracao));
 
     const createAux = (endpoint, nome, setState) => request(endpoint, { method: 'POST', body: JSON.stringify({ nome }) }, async (novo) => setState((items) => [...items, novo]));
     const deleteAux = (endpoint, id, setState) => request(`${endpoint}/${id}`, { method: 'DELETE' }, async () => setState((items) => items.filter((item) => item.id !== id)));
@@ -120,9 +124,10 @@ export const DataProvider = ({ children }) => {
     };
 
     return <DataContext.Provider value={{
-        produtos, itensEstoque, categorias, canaisVenda, canaisCompra, vendas, anuncios, isLoading,
+        produtos, itensEstoque, categorias, canaisVenda, canaisCompra, vendas, anuncios, vitrineConfig, isLoading,
         adicionarProduto, atualizarProduto, removerProduto, adicionarEstoqueEmLote, venderItem, cancelarVenda,
         reservarItem, liberarReserva, removerItemEstoque, adicionarCategoria, removerCategoria,
-        criarAnuncio, atualizarAnuncio, desativarAnuncio, adicionarCanalVenda, removerCanalVenda, adicionarCanalCompra, removerCanalCompra, buscarAnalises, fetchData, formatDate
+        criarAnuncio, atualizarAnuncio, desativarAnuncio, salvarConfiguracaoVitrine, alterarPublicacaoVitrine,
+        adicionarCanalVenda, removerCanalVenda, adicionarCanalCompra, removerCanalCompra, buscarAnalises, fetchData, formatDate
     }}>{children}</DataContext.Provider>;
 };

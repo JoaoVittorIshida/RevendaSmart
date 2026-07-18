@@ -1,29 +1,46 @@
-import React from 'react';
+import React, { useEffect, useId } from 'react';
 import { X } from 'lucide-react';
 
-const Modal = ({ isOpen, onClose, title, children }) => {
+const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-4xl' }) => {
+    const titleId = useId();
+
+    useEffect(() => {
+        if (!isOpen) return undefined;
+        const previousOverflow = document.body.style.overflow;
+        const handleKeyDown = (event) => { if (event.key === 'Escape') onClose(); };
+        document.body.style.overflow = 'hidden';
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.body.style.overflow = previousOverflow;
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            {/* Backdrop click handler can be added to the outer div if desired, but for now we just wrap the content */}
-            <div className="card w-full max-w-4xl shadow-2xl border-blue-100 max-h-[90vh] flex flex-col bg-white rounded-xl overflow-hidden p-0 animate-in slide-in-from-bottom-4 duration-300">
-
-                {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-white shrink-0">
-                    <h2 className="text-xl font-bold text-primary">{title}</h2>
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-sm p-4 animate-in fade-in"
+            onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}
+        >
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={titleId}
+                className={`w-full ${maxWidth} max-h-[92vh] flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-800 animate-in zoom-in`}
+            >
+                <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-5 py-4 sm:px-6 dark:border-slate-700 shrink-0">
+                    <h2 id={titleId} className="text-lg font-bold text-slate-900 dark:text-slate-50">{title}</h2>
                     <button
+                        type="button"
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-full"
+                        className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+                        aria-label="Fechar modal"
                     >
-                        <X size={24} />
+                        <X size={20} />
                     </button>
                 </div>
-
-                {/* Content */}
-                <div className="p-6 overflow-y-auto">
-                    {children}
-                </div>
+                <div className="overflow-y-auto p-5 sm:p-6">{children}</div>
             </div>
         </div>
     );

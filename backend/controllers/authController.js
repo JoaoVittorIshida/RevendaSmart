@@ -126,18 +126,31 @@ const logout = (req, res) => {
 };
 
 const updateAccount = async (req, res) => {
+    let connection;
     try {
         const nome = normalizeName(req.body.nome);
         const nomeLoja = normalizeStoreName(req.body.nomeLoja);
         if (!nome || nome.length > 255) return res.status(400).json({ message: 'Informe um nome completo de até 255 caracteres.' });
         if (nomeLoja.length > 100) return res.status(400).json({ message: 'O nome da loja pode ter no máximo 100 caracteres.' });
-        const [result] = await db.query('UPDATE usuarios SET nome = ?, nome_loja = ? WHERE id = ?', [nome, nomeLoja || null, req.user.id]);
-        if (!result.affectedRows) return res.status(404).json({ message: 'Usuário não encontrado.' });
-        const [users] = await db.query('SELECT id, nome, usuario, nome_loja FROM usuarios WHERE id = ?', [req.user.id]);
+        connection = await db.getConnection();
+        await connection.beginTransaction();
+        const [accounts] = await connection.query('SELECT id FROM usuarios WHERE id = ? FOR UPDATE', [req.user.id]);
+        if (!accounts.length) throw Object.assign(new Error('Usuário não encontrado.'), { status: 404 });
+        const [showcases] = await connection.query('SELECT publicada FROM vitrine_configuracoes WHERE usuario_id = ? FOR UPDATE', [req.user.id]);
+        if (!nomeLoja && showcases[0]?.publicada) {
+            throw Object.assign(new Error('Despublique a Vitrine antes de apagar o nome da loja.'), { status: 409 });
+        }
+        const [result] = await connection.query('UPDATE usuarios SET nome = ?, nome_loja = ? WHERE id = ?', [nome, nomeLoja || null, req.user.id]);
+        if (!result.affectedRows) throw Object.assign(new Error('Usuário não encontrado.'), { status: 404 });
+        const [users] = await connection.query('SELECT id, nome, usuario, nome_loja FROM usuarios WHERE id = ?', [req.user.id]);
+        await connection.commit();
         res.json({ user: userDto(users[0]) });
     } catch (error) {
+        if (connection) await connection.rollback();
         console.error(error);
-        res.status(500).json({ message: 'Não foi possível atualizar os dados da conta.' });
+        res.status(error.status || 500).json({ message: error.status ? error.message : 'Não foi possível atualizar os dados da conta.' });
+    } finally {
+        if (connection) connection.release();
     }
 };
 
