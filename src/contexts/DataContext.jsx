@@ -24,7 +24,7 @@ export const DataProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(true);
 
     const authFetch = useCallback(async (endpoint, options = {}) => {
-        if (!usuario) return null;
+        if (!usuario || usuario.admin) return null;
         return fetch(`${API_URL}${endpoint}`, {
             ...options,
             headers: { 'Content-Type': 'application/json', ...options.headers },
@@ -33,7 +33,7 @@ export const DataProvider = ({ children }) => {
     }, [usuario]);
 
     const fetchData = useCallback(async () => {
-        if (!usuario) return;
+        if (!usuario || usuario.admin) return;
         const userId = usuario.id;
         const generation = ++requestGeneration.current;
         setIsLoading(true);
@@ -63,7 +63,7 @@ export const DataProvider = ({ children }) => {
 
     useEffect(() => {
         requestGeneration.current += 1;
-        if (usuario) {
+        if (usuario && !usuario.admin) {
             fetchData();
             return;
         }

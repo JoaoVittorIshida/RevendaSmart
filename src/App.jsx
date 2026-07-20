@@ -24,6 +24,7 @@ const Analises = lazy(() => import('./pages/Analises'));
 const Vitrine = lazy(() => import('./pages/Vitrine'));
 const Portabilidade = lazy(() => import('./pages/Portabilidade'));
 const VitrinePublica = lazy(() => import('./pages/VitrinePublica'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
 const NAV_ITEMS = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -160,7 +161,23 @@ const PrivateRoute = ({ children }) => {
     );
   }
   if (!usuario) return <Navigate to="/login" replace />;
+  if (usuario.admin) return <Navigate to="/admin" replace />;
   return <Layout>{children}</Layout>;
+};
+
+const AdminRoute = ({ children }) => {
+  const { usuario, loading } = useAuth();
+  if (loading) return <div className="session-loading"><div /><p>Validando acesso...</p></div>;
+  if (!usuario) return <Navigate to="/login" replace />;
+  if (!usuario.admin) return <Navigate to="/" replace />;
+  return children;
+};
+
+const GuestRoute = ({ children }) => {
+  const { usuario, loading } = useAuth();
+  if (loading) return <div className="session-loading"><div /><p>Validando sessão...</p></div>;
+  if (usuario) return <Navigate to={usuario.admin ? '/admin' : '/'} replace />;
+  return children;
 };
 
 function App() {
@@ -173,8 +190,9 @@ function App() {
               <Router>
                 <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-500">Carregando...</div>}>
                 <Routes>
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/cadastro" element={<Cadastro />} />
+                  <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
+                  <Route path="/cadastro" element={<GuestRoute><Cadastro /></GuestRoute>} />
+                  <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
                   <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
                   <Route path="/vendas" element={<PrivateRoute><Vendas /></PrivateRoute>} />
                   <Route path="/historico-vendas" element={<PrivateRoute><HistoricoVendas /></PrivateRoute>} />

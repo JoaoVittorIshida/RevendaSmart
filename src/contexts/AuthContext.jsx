@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
             const data = await response.json();
             if (!response.ok) return { success: false, message: data.message || 'Erro ao entrar.' };
             setUsuario(data.user);
-            return { success: true };
+            return { success: true, user: data.user };
         } catch (error) {
             console.error(error);
             return { success: false, message: 'Erro de conexao com o servidor.' };
@@ -47,10 +47,10 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const registrar = async (nome, loginUsuario, senha, nomeLoja = '') => {
+    const registrar = async (nome, loginUsuario, email, senha, nomeLoja = '') => {
         setLoading(true);
         try {
-            const response = await fetch(`${API_URL}/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ nome, usuario: loginUsuario, senha, nomeLoja }) });
+            const response = await fetch(`${API_URL}/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ nome, usuario: loginUsuario, email, senha, nomeLoja }) });
             const data = await response.json();
             return response.ok ? { success: true } : { success: false, message: data.message || 'Erro ao cadastrar.' };
         } catch (error) {

@@ -28,6 +28,7 @@ app.use(express.json({ limit: '1mb' }));
 app.use(require('./middleware/csrfMiddleware'));
 
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/produtos', require('./routes/productsRoutes'));
 app.use('/api/estoque', require('./routes/stockRoutes'));
 app.use('/api/dados', require('./routes/dataRoutes'));

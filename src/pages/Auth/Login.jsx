@@ -28,7 +28,7 @@ const Login = () => {
         try {
             const result = await login(formData.usuario, formData.senha);
             if (result.success) {
-                navigate('/');
+                navigate(result.user?.admin ? '/admin' : '/', { replace: true });
             } else {
                 setError(result.message);
             }
