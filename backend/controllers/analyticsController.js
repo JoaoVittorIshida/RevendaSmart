@@ -39,13 +39,14 @@ const resolvePeriod = ({ inicio, fim, modo }) => {
 };
 
 const salesParams = (userId, period) => period.modo === 'todo' ? [userId] : [userId, period.inicio, period.fim];
-const salesFilters = (period, alias = '') => `
+const salesFilters = (period, includePending, alias = '') => `
     WHERE ${alias}usuario_id = ?
       AND ${alias}status = 'concluida'
-      AND ${alias}dados_incompletos = 0${period.modo === 'todo' ? '' : `
+      AND ${alias}dados_incompletos = 0${includePending ? '' : `
+      AND ${alias}recebido = 1`}${period.modo === 'todo' ? '' : `
       AND ${alias}data_venda >= ?
       AND ${alias}data_venda < DATE_ADD(?, INTERVAL 1 DAY)`}`;
-const salesWhere = (period) => `FROM vendas ${salesFilters(period)}`;
+const salesWhere = (period, includePending) => `FROM vendas ${salesFilters(period, includePending)}`;
 
 const number = (value) => Number(value || 0);
 const percent = (part, total) => (total ? (part / total) * 100 : 0);
@@ -77,6 +78,7 @@ const mapPerformance = (row) => {
 
 const getAnalytics = async (req, res) => {
     const period = resolvePeriod(req.query);
+    const includePending = req.query.incluirPendentes === 'true';
     if (!period) return res.status(400).json({ message: 'Informe um período válido de até 366 dias.' });
 
     try {
@@ -109,24 +111,24 @@ const getAnalytics = async (req, res) => {
             [ranking],
             [fastest]
         ] = await Promise.all([
-            db.query(`SELECT ${performanceFields()} ${salesWhere(period)}`, currentParams),
-            period.modo === 'todo' ? Promise.resolve([[{}]]) : db.query(`SELECT ${performanceFields()} ${salesWhere(previousPeriod)}`, previousParams),
+            db.query(`SELECT ${performanceFields()} ${salesWhere(period, includePending)}`, currentParams),
+            period.modo === 'todo' ? Promise.resolve([[{}]]) : db.query(`SELECT ${performanceFields()} ${salesWhere(previousPeriod, includePending)}`, previousParams),
             db.query(`SELECT canal_venda_id AS id, COALESCE(NULLIF(canal_nome, ''), 'Não informado') AS nome, ${performanceFields()}
-                ${salesWhere(period)} GROUP BY canal_venda_id, canal_nome ORDER BY lucro_liquido DESC, vendas DESC`, currentParams),
+                ${salesWhere(period, includePending)} GROUP BY canal_venda_id, canal_nome ORDER BY lucro_liquido DESC, vendas DESC`, currentParams),
             db.query(`SELECT v.canal_compra_id AS id, COALESCE(NULLIF(v.canal_compra_nome, ''), 'Não informado') AS nome, ${performanceFields('v.')},
                 COALESCE(AVG(GREATEST(0, DATEDIFF(v.data_venda, e.data_entrada))), 0) AS giro_medio
                 FROM vendas v LEFT JOIN estoque e ON e.id = v.estoque_id AND e.usuario_id = v.usuario_id
-                ${salesFilters(period, 'v.')}
+                ${salesFilters(period, includePending, 'v.')}
                 GROUP BY v.canal_compra_id, v.canal_compra_nome ORDER BY lucro_liquido DESC, vendas DESC`, currentParams),
             db.query(`SELECT COALESCE(NULLIF(v.origem, ''), 'Não informado') AS nome, ${performanceFields('v.')},
                 COALESCE(AVG(GREATEST(0, DATEDIFF(v.data_venda, e.data_entrada))), 0) AS giro_medio
                 FROM vendas v LEFT JOIN estoque e ON e.id = v.estoque_id AND e.usuario_id = v.usuario_id
-                ${salesFilters(period, 'v.')}
+                ${salesFilters(period, includePending, 'v.')}
                 GROUP BY COALESCE(NULLIF(v.origem, ''), 'Não informado') ORDER BY lucro_liquido DESC, vendas DESC`, currentParams),
             db.query(`SELECT COALESCE(NULLIF(v.categoria_nome, ''), 'Sem categoria') AS nome, ${performanceFields('v.')},
                 COALESCE(AVG(GREATEST(0, DATEDIFF(v.data_venda, e.data_entrada))), 0) AS giro_medio
                 FROM vendas v LEFT JOIN estoque e ON e.id = v.estoque_id AND e.usuario_id = v.usuario_id
-                ${salesFilters(period, 'v.')}
+                ${salesFilters(period, includePending, 'v.')}
                 GROUP BY COALESCE(NULLIF(v.categoria_nome, ''), 'Sem categoria') ORDER BY lucro_liquido DESC, vendas DESC`, currentParams),
             db.query(`SELECT
                 COALESCE(NULLIF(canal_compra_nome, ''), 'Não informado') AS canal_compra,
@@ -134,7 +136,7 @@ const getAnalytics = async (req, res) => {
                 COUNT(*) AS vendas,
                 COALESCE(SUM(valor_liquido - preco_custo), 0) AS lucro_liquido,
                 COALESCE(SUM(valor_liquido), 0) AS receita_liquida
-                ${salesWhere(period)}
+                ${salesWhere(period, includePending)}
                 GROUP BY canal_compra_nome, canal_nome
                 ORDER BY lucro_liquido DESC, vendas DESC LIMIT 12`, currentParams),
             db.query(`SELECT COALESCE(NULLIF(origem, ''), 'Não informado') AS nome,
@@ -167,10 +169,10 @@ const getAnalytics = async (req, res) => {
                 FROM estoque WHERE usuario_id = ? AND status IN ('disponivel', 'reservado')`, [userId]),
             db.query(`SELECT produto_nome AS nome, COUNT(*) AS vendas,
                 COALESCE(SUM(valor_liquido - preco_custo), 0) AS lucro
-                ${salesWhere(period)} GROUP BY produto_nome ORDER BY lucro DESC, vendas DESC LIMIT 8`, currentParams),
+                ${salesWhere(period, includePending)} GROUP BY produto_nome ORDER BY lucro DESC, vendas DESC LIMIT 8`, currentParams),
             db.query(`SELECT v.id, v.produto_nome AS nome, v.valor_liquido AS valor, GREATEST(0, DATEDIFF(v.data_venda, e.data_entrada)) AS dias
                 FROM vendas v INNER JOIN estoque e ON e.id = v.estoque_id AND e.usuario_id = v.usuario_id
-                ${salesFilters(period, 'v.')}
+                ${salesFilters(period, includePending, 'v.')}
                 ORDER BY dias ASC, v.data_venda DESC LIMIT 8`, currentParams)
         ]);
 
@@ -178,7 +180,7 @@ const getAnalytics = async (req, res) => {
         const previous = mapPerformance(previousSummaryRows[0]);
         const inventory = inventorySummaryRows[0];
         res.json({
-            periodo: period,
+            periodo: { ...period, incluirPendentes: includePending },
             resumo: summary,
             comparativo: period.modo === 'todo' ? null : {
                 receitaLiquida: number(summary.receitaLiquida - previous.receitaLiquida),

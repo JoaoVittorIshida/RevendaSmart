@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, Package, Settings, LogOut, History, Menu, X, Sun, Moon, BarChart3, Image, Database, UserRound } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Settings, LogOut, History, Menu, X, Sun, Moon, BarChart3, Image, Database, UserRound, CircleDollarSign } from 'lucide-react';
 import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { DataProvider } from './contexts/DataContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -11,6 +11,7 @@ const Cadastro = lazy(() => import('./pages/Auth/Cadastro'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Vendas = lazy(() => import('./pages/Vendas'));
 const HistoricoVendas = lazy(() => import('./pages/HistoricoVendas'));
+const Recebimentos = lazy(() => import('./pages/Recebimentos'));
 const Estoque = lazy(() => import('./pages/Estoque'));
 const EstoqueForm = lazy(() => import('./pages/EstoqueForm'));
 const CentralCadastros = lazy(() => import('./pages/Cadastros/CentralCadastros'));
@@ -30,6 +31,7 @@ const NAV_ITEMS = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/vendas', icon: ShoppingCart, label: 'Nova Venda' },
   { to: '/historico-vendas', icon: History, label: 'Histórico' },
+  { to: '/recebimentos', icon: CircleDollarSign, label: 'Recebimentos' },
   { to: '/estoque', icon: Package, label: 'Estoque' },
   { to: '/analises', icon: BarChart3, label: 'Análises' },
   { to: '/vitrine', icon: Image, label: 'Vitrine' },
@@ -199,6 +201,7 @@ function App() {
                   <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
                   <Route path="/vendas" element={<PrivateRoute><Vendas /></PrivateRoute>} />
                   <Route path="/historico-vendas" element={<PrivateRoute><HistoricoVendas /></PrivateRoute>} />
+                  <Route path="/recebimentos" element={<PrivateRoute><Recebimentos /></PrivateRoute>} />
                   <Route path="/estoque" element={<PrivateRoute><Estoque /></PrivateRoute>} />
                   <Route path="/estoque/entrada" element={<PrivateRoute><EstoqueForm /></PrivateRoute>} />
                   <Route path="/analises" element={<PrivateRoute><Analises /></PrivateRoute>} />

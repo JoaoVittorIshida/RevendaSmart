@@ -85,8 +85,9 @@ export const DataProvider = ({ children }) => {
         }
     };
 
-    const buscarAnalises = useCallback(async ({ inicio, fim, modo }) => {
+    const buscarAnalises = useCallback(async ({ inicio, fim, modo, incluirPendentes = false }) => {
         const params = modo === 'todo' ? new URLSearchParams({ modo }) : new URLSearchParams({ inicio, fim });
+        params.set('incluirPendentes', String(incluirPendentes));
         const res = await authFetch(`/analises?${params.toString()}`);
         const data = await res?.json().catch(() => ({}));
         if (!res?.ok) return { ok: false, message: data.message || 'Não foi possível carregar as análises.' };
@@ -99,6 +100,7 @@ export const DataProvider = ({ children }) => {
     const adicionarEstoqueEmLote = (dados) => request('/estoque/entrada', { method: 'POST', body: JSON.stringify(dados) }, fetchData);
     const venderItem = (id, dados) => request(`/estoque/${id}/venda`, { method: 'POST', body: JSON.stringify(dados) }, fetchData);
     const cancelarVenda = (id) => request(`/estoque/${id}/venda`, { method: 'DELETE' }, fetchData);
+    const registrarRecebimento = (id, dataRecebimento) => request(`/vendas/${id}/recebimento`, { method: 'PATCH', body: JSON.stringify({ dataRecebimento }) }, fetchData);
     const reservarItem = (id, dados) => request(`/estoque/${id}/reserva`, { method: 'POST', body: JSON.stringify(dados) }, fetchData);
     const liberarReserva = (id) => request(`/estoque/${id}/reserva`, { method: 'DELETE' }, fetchData);
     const removerItemEstoque = (id) => request(`/estoque/${id}`, { method: 'DELETE' }, fetchData);
@@ -125,7 +127,7 @@ export const DataProvider = ({ children }) => {
 
     return <DataContext.Provider value={{
         produtos, itensEstoque, categorias, canaisVenda, canaisCompra, vendas, anuncios, vitrineConfig, isLoading,
-        adicionarProduto, atualizarProduto, removerProduto, adicionarEstoqueEmLote, venderItem, cancelarVenda,
+        adicionarProduto, atualizarProduto, removerProduto, adicionarEstoqueEmLote, venderItem, cancelarVenda, registrarRecebimento,
         reservarItem, liberarReserva, removerItemEstoque, adicionarCategoria, removerCategoria,
         criarAnuncio, atualizarAnuncio, desativarAnuncio, salvarConfiguracaoVitrine, alterarPublicacaoVitrine,
         adicionarCanalVenda, removerCanalVenda, adicionarCanalCompra, removerCanalCompra, buscarAnalises, fetchData, formatDate

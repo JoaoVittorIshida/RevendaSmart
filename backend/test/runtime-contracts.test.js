@@ -79,8 +79,32 @@ test('analytics preserves source snapshots and aggregates by the selected period
     assert.match(analytics, /parados_60_89/);
     assert.match(analytics, /parados_90_mais/);
     assert.match(analytics, /AVG\(GREATEST\(0, DATEDIFF\(v\.data_venda, e\.data_entrada\)\)\)/);
+    assert.match(analytics, /incluirPendentes/);
+    assert.match(analytics, /recebido = 1/);
     assert.match(portability, /canal_compra_nome/);
     assert.match(portability, /dados_incompletos/);
+});
+
+test('sales preserve receipt status and only allow a pending sale to be received', () => {
+    const stock = read('backend', 'controllers', 'stockController.js');
+    const sales = read('backend', 'controllers', 'salesController.js');
+    const salesRoutes = read('backend', 'routes', 'salesRoutes.js');
+    assert.match(stock, /recebido = true/);
+    assert.match(stock, /data_recebimento/);
+    assert.match(sales, /dataRecebimento/);
+    assert.match(sales, /AND recebido = 0/);
+    assert.match(sales, /data de recebimento nao pode estar no futuro/i);
+    assert.match(sales, /DATE\(data_venda\) <= DATE\(\?\)/);
+    assert.match(salesRoutes, /router\.patch\('\/:id\/recebimento'/);
+});
+
+test('receipt confirmation uses a review modal instead of changing the date in the table', () => {
+    const receiptPage = read('src', 'pages', 'Recebimentos.jsx');
+    assert.match(receiptPage, /Confirmar recebimento/);
+    assert.match(receiptPage, /Data da venda/);
+    assert.match(receiptPage, /Data de recebimento/);
+    assert.match(receiptPage, /openReceiptModal/);
+    assert.match(receiptPage, /<Modal/);
 });
 
 test('public showcase exposes an explicit DTO and account name is protected while published', () => {

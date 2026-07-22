@@ -1,0 +1,1 @@
+ALTER TABLE vendas ADD COLUMN recebido TINYINT(1) NOT NULL DEFAULT 1 AFTER data_venda, ADD COLUMN data_recebimento DATETIME DEFAULT NULL AFTER recebido, ADD KEY idx_vendas_usuario_recebido (usuario_id, recebido, data_venda);

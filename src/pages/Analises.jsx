@@ -108,6 +108,7 @@ const Analises = () => {
     const [draft, setDraft] = useState(initialPeriod);
     const [period, setPeriod] = useState(initialPeriod);
     const [periodMode, setPeriodMode] = useState('30');
+    const [incluirPendentes, setIncluirPendentes] = useState(false);
     const [activeTab, setActiveTab] = useState('resumo');
     const tabRefs = useRef([]);
     const [data, setData] = useState(null);
@@ -116,7 +117,7 @@ const Analises = () => {
 
     useEffect(() => {
         let active = true;
-        buscarAnalises(period).then((result) => {
+        buscarAnalises({ ...period, incluirPendentes }).then((result) => {
             if (!active) return;
             if (result.ok) {
                 setData(result.data);
@@ -130,7 +131,7 @@ const Analises = () => {
             }
         });
         return () => { active = false; };
-    }, [buscarAnalises, period]);
+    }, [buscarAnalises, period, incluirPendentes]);
 
     const resumo = data?.resumo;
     const estoque = data?.estoque;
@@ -174,6 +175,7 @@ const Analises = () => {
         <section className="card mb-6" aria-label="Filtrar período das análises">
             <div className="flex items-start gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300 shrink-0"><CalendarDays size={20} aria-hidden="true" /></span><div><h2 className="section-heading">Escolha o período</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{periodMode === 'todo' ? 'Mostra todo o histórico registrado, sem comparar períodos.' : periodMode === 'personalizado' ? 'Atualiza automaticamente quando o intervalo for válido.' : 'Atualiza automaticamente e compara com o período anterior.'}</p></div></div>
             <div className="mt-4 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between"><div className="flex flex-wrap gap-2" role="group" aria-label="Atalhos de período">{periodOptions.map((option) => <button key={option.id} type="button" onClick={() => selectPeriodMode(option)} aria-pressed={periodMode === option.id} className={`btn px-3 py-2 ${periodMode === option.id ? 'btn-primary' : 'btn-secondary'}`}>{option.label}</button>)}</div>{periodMode === 'personalizado' && <div className="grid sm:grid-cols-2 gap-3"><label className="text-sm font-medium text-slate-700 dark:text-slate-200">Início<input required type="date" className="input mt-1" value={draft.inicio} max={draft.fim} onChange={(event) => updateCustomDate('inicio', event.target.value)} /></label><label className="text-sm font-medium text-slate-700 dark:text-slate-200">Fim<input required type="date" className="input mt-1" value={draft.fim} min={draft.inicio} onChange={(event) => updateCustomDate('fim', event.target.value)} /></label></div>}</div>
+            <label className="mt-4 flex w-fit cursor-pointer items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"><input type="checkbox" checked={incluirPendentes} onChange={(event) => { setIncluirPendentes(event.target.checked); setLoading(true); setError(''); }} className="h-4 w-4 accent-blue-600" />Incluir vendas pendentes de recebimento</label>
             {loading && <p className="mt-3 text-xs font-medium text-slate-500 dark:text-slate-400" aria-live="polite">Atualizando análises…</p>}
         </section>
 

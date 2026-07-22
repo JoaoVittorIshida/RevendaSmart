@@ -87,12 +87,12 @@ const sellItem = async (req, res) => {
     let connection;
     try {
         const { id } = req.params;
-        const { precoVenda, valorBruto, taxaPlataforma = 0, freteVendedor = 0, canalVendaId, dataVenda } = req.body;
+        const { precoVenda, valorBruto, taxaPlataforma = 0, freteVendedor = 0, canalVendaId, dataVenda, recebido = true } = req.body;
         const gross = parseMoney(valorBruto ?? precoVenda);
         const fee = parseMoney(taxaPlataforma);
         const shipping = parseMoney(freteVendedor);
         const saleDate = toMySqlDate(dataVenda);
-        if (gross === null || gross <= 0 || gross > MAX_MONEY || fee === null || fee < 0 || fee > MAX_MONEY || shipping === null || shipping < 0 || shipping > MAX_MONEY || !saleDate) return res.status(400).json({ message: 'Dados da venda invalidos.' });
+        if (typeof recebido !== 'boolean' || gross === null || gross <= 0 || gross > MAX_MONEY || fee === null || fee < 0 || fee > MAX_MONEY || shipping === null || shipping < 0 || shipping > MAX_MONEY || !saleDate) return res.status(400).json({ message: 'Dados da venda invalidos.' });
         const net = Math.round((gross - fee - shipping) * 100) / 100;
         if (net < 0) return res.status(400).json({ message: 'O valor liquido nao pode ser negativo.' });
 
@@ -110,8 +110,9 @@ const sellItem = async (req, res) => {
         if (canalVendaId && !item.canal_nome) throw Object.assign(new Error('Canal de venda invalido.'), { status: 400 });
 
         const saleId = randomUUID();
-        await connection.query(`INSERT INTO vendas (id, usuario_id, estoque_id, produto_id, produto_nome, categoria_nome, origem, canal_compra_id, canal_compra_nome, canal_venda_id, canal_nome, preco_custo, valor_bruto, taxa_plataforma, frete_vendedor, valor_liquido, data_venda)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [saleId, req.user.id, item.id, item.produto_id, item.produto_nome || 'Produto removido', item.categoria_nome || 'Sem categoria', item.origem || null, item.canal_compra_id || null, item.canal_compra_nome || 'Não informado', canalVendaId || null, item.canal_nome || 'Nao informado', item.preco_custo, gross, fee, shipping, net, saleDate]);
+        const receivedAt = recebido ? toMySqlDate() : null;
+        await connection.query(`INSERT INTO vendas (id, usuario_id, estoque_id, produto_id, produto_nome, categoria_nome, origem, canal_compra_id, canal_compra_nome, canal_venda_id, canal_nome, preco_custo, valor_bruto, taxa_plataforma, frete_vendedor, valor_liquido, data_venda, recebido, data_recebimento)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [saleId, req.user.id, item.id, item.produto_id, item.produto_nome || 'Produto removido', item.categoria_nome || 'Sem categoria', item.origem || null, item.canal_compra_id || null, item.canal_compra_nome || 'Não informado', canalVendaId || null, item.canal_nome || 'Nao informado', item.preco_custo, gross, fee, shipping, net, saleDate, recebido, receivedAt]);
         await connection.query("UPDATE estoque SET status = 'vendido', preco_venda = ?, canal_venda_id = ?, data_venda = ?, reservado_ate = NULL, reserva_observacao = NULL WHERE id = ? AND usuario_id = ?", [net, canalVendaId || null, saleDate, id, req.user.id]);
         await deactivateShowcaseIfUnavailable(connection, req.user.id, item.produto_id);
         await connection.commit();

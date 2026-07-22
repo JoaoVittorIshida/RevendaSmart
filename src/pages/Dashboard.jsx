@@ -273,6 +273,7 @@ const Dashboard = () => {
 
     const [periodo, setPeriodo] = useState('total');
     const [topFiltro, setTopFiltro] = useState('produto');
+    const [incluirPendentes, setIncluirPendentes] = useState(false);
 
     const dadosCalculados = useMemo(() => {
         const hoje = new Date();
@@ -283,7 +284,7 @@ const Dashboard = () => {
         const canaisCompraMap = new Map(canaisCompra.map((canal) => [canal.id, canal]));
 
         const itensVendidos = vendas.filter((item) => {
-            if (item.status !== 'concluida' || item.dadosIncompletos) return false;
+            if (item.status !== 'concluida' || item.dadosIncompletos || (!incluirPendentes && !item.recebido)) return false;
             if (periodo === '30dias') return new Date(item.data) >= dataLimite;
             return true;
         });
@@ -355,7 +356,7 @@ const Dashboard = () => {
             purchaseChannelData,
             vendasDetalhadas
         };
-    }, [itensEstoque, vendas, canaisVenda, canaisCompra, periodo, formatDate]);
+    }, [itensEstoque, vendas, canaisVenda, canaisCompra, periodo, formatDate, incluirPendentes]);
 
     const topChartData = useMemo(() => {
         const grouped = dadosCalculados.vendasDetalhadas.reduce((acc, item) => {
@@ -407,7 +408,9 @@ const Dashboard = () => {
                     <p className="page-subtitle">Visão geral do seu negócio</p>
                 </div>
 
-                <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm self-start sm:self-auto">
+                <div className="flex flex-wrap items-center justify-end gap-3 self-start sm:self-auto">
+                    <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"><input type="checkbox" checked={incluirPendentes} onChange={(event) => setIncluirPendentes(event.target.checked)} className="h-4 w-4 accent-blue-600" />Incluir pendentes</label>
+                    <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                     {[
                         { key: 'total', label: 'Total' },
                         { key: '30dias', label: 'Últimos 30 dias' }
@@ -424,6 +427,7 @@ const Dashboard = () => {
                             {option.label}
                         </button>
                     ))}
+                    </div>
                 </div>
             </div>
 
