@@ -38,7 +38,7 @@ test('contato normaliza WhatsApp brasileiro e exige cidade com UF', () => {
     assert.equal(normalizeWhatsapp('(11) 3333-4444'), '1133334444');
     assert.equal(normalizeWhatsapp('123'), undefined);
     assert.deepEqual(validateContactInput({ whatsapp: '(11) 99999-9999', cidade: 'São Paulo', estado: 'sp' }).value, {
-        whatsapp: '11999999999', cidade: 'São Paulo', estado: 'SP'
+        whatsapp: '11999999999', cidade: 'São Paulo', estado: 'SP', descricaoLoja: null
     });
     assert.match(validateContactInput({ cidade: 'São Paulo' }).error, /cidade e estado/);
 });

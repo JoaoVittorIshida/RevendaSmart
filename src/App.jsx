@@ -66,11 +66,14 @@ const ThemeToggle = ({ className = '' }) => {
   );
 };
 
+const BrandMark = ({ compact = false, photo, storeName }) => <div className={`${compact ? 'w-7 h-7 rounded-lg text-xs' : 'w-10 h-10 rounded-xl text-sm'} flex items-center justify-center overflow-hidden font-bold text-white sidebar-brand-icon shrink-0`}>{photo ? <img src={photo} alt={`Logo ${storeName}`} className="h-full w-full object-cover" /> : 'RS'}</div>;
+
 const Layout = ({ children }) => {
   const { logout, usuario } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const firstName = usuario ? usuario.nome.split(' ')[0] : 'Admin';
   const storeName = usuario?.nomeLoja?.trim() || 'RevendaSmart';
+  const profilePhoto = usuario?.fotoPerfil || '';
 
   useEffect(() => {
     document.body.style.overflow = sidebarOpen ? 'hidden' : '';
@@ -94,7 +97,7 @@ const Layout = ({ children }) => {
         {/* Brand */}
         <div className="flex items-center justify-between mb-8 px-1">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white text-sm sidebar-brand-icon shrink-0">RS</div>
+            <BrandMark photo={profilePhoto} storeName={storeName} />
             <div className="min-w-0">
               <span className="font-bold text-base tracking-tight text-white block leading-tight truncate" title={storeName}>{storeName}</span>
               <span className="text-xs text-blue-400 font-medium truncate block">{firstName}</span>
@@ -134,7 +137,7 @@ const Layout = ({ children }) => {
             <Menu size={22} />
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-white text-xs sidebar-brand-icon">RS</div>
+            <BrandMark compact photo={profilePhoto} storeName={storeName} />
             <span className="font-bold text-slate-800 dark:text-slate-100 text-sm truncate max-w-44">{storeName}</span>
           </div>
           <ThemeToggle className="hover:bg-slate-100 dark:hover:bg-slate-700" />

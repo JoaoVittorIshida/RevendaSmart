@@ -99,10 +99,12 @@ const validateContactInput = (body = {}) => {
     const whatsapp = normalizeWhatsapp(body.whatsapp);
     const cidade = String(body.cidade ?? '').trim();
     const estado = String(body.estado ?? '').trim().toUpperCase();
+    const descricaoLoja = String(body.descricaoLoja ?? '').trim();
     if (whatsapp === undefined) return { error: 'Informe um WhatsApp válido com DDD.' };
     if (cidade.length > 100) return { error: 'A cidade pode ter no máximo 100 caracteres.' };
+    if (descricaoLoja.length > 600) return { error: 'A descrição da loja pode ter no máximo 600 caracteres.' };
     if ((cidade && !VALID_STATES.has(estado)) || (!cidade && estado)) return { error: 'Informe cidade e estado juntos.' };
-    return { value: { whatsapp, cidade: cidade || null, estado: estado || null } };
+    return { value: { whatsapp, cidade: cidade || null, estado: estado || null, descricaoLoja: descricaoLoja || null } };
 };
 
 const slugifyStoreName = (value) => {

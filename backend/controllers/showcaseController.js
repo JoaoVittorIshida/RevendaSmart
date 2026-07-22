@@ -14,12 +14,13 @@ const configDto = (row = {}) => ({
     slug: row.slug || '',
     whatsapp: row.whatsapp || '',
     cidade: row.cidade || '',
-    estado: row.estado || ''
+    estado: row.estado || '',
+    descricaoLoja: row.descricao_loja || ''
 });
 
 const getConfig = async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT slug, publicada, whatsapp, cidade, estado FROM vitrine_configuracoes WHERE usuario_id = ?', [req.user.id]);
+        const [rows] = await db.query('SELECT slug, publicada, whatsapp, cidade, estado, descricao_loja FROM vitrine_configuracoes WHERE usuario_id = ?', [req.user.id]);
         return res.json(configDto(rows[0]));
     } catch (error) {
         console.error(error);
@@ -32,11 +33,11 @@ const updateConfig = async (req, res) => {
     if (validated.error) return res.status(400).json({ message: validated.error });
     try {
         const contact = validated.value;
-        await db.query(`INSERT INTO vitrine_configuracoes (usuario_id, whatsapp, cidade, estado)
-            VALUES (?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE whatsapp = VALUES(whatsapp), cidade = VALUES(cidade), estado = VALUES(estado)`,
-            [req.user.id, contact.whatsapp, contact.cidade, contact.estado]);
-        const [rows] = await db.query('SELECT slug, publicada, whatsapp, cidade, estado FROM vitrine_configuracoes WHERE usuario_id = ?', [req.user.id]);
+        await db.query(`INSERT INTO vitrine_configuracoes (usuario_id, whatsapp, cidade, estado, descricao_loja)
+            VALUES (?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE whatsapp = VALUES(whatsapp), cidade = VALUES(cidade), estado = VALUES(estado), descricao_loja = VALUES(descricao_loja)`,
+            [req.user.id, contact.whatsapp, contact.cidade, contact.estado, contact.descricaoLoja]);
+        const [rows] = await db.query('SELECT slug, publicada, whatsapp, cidade, estado, descricao_loja FROM vitrine_configuracoes WHERE usuario_id = ?', [req.user.id]);
         return res.json({ message: 'Informações da loja atualizadas.', configuracao: configDto(rows[0]) });
     } catch (error) {
         console.error(error);
@@ -58,7 +59,7 @@ const publishShowcase = async (req, res) => {
         const [users] = await connection.query('SELECT nome_loja FROM usuarios WHERE id = ? FOR UPDATE', [req.user.id]);
         if (!users.length) throw Object.assign(new Error('Usuário não encontrado.'), { status: 404 });
         const storeName = String(users[0].nome_loja || '').trim();
-        const [configs] = await connection.query('SELECT slug, publicada, whatsapp, cidade, estado FROM vitrine_configuracoes WHERE usuario_id = ? FOR UPDATE', [req.user.id]);
+        const [configs] = await connection.query('SELECT slug, publicada, whatsapp, cidade, estado, descricao_loja FROM vitrine_configuracoes WHERE usuario_id = ? FOR UPDATE', [req.user.id]);
 
         if (!req.body.publicada) {
             await connection.query(`INSERT INTO vitrine_configuracoes (usuario_id, publicada) VALUES (?, 0)
@@ -104,7 +105,7 @@ const getPublicShowcase = async (req, res) => {
     const slug = String(req.params.slug || '').trim().toLowerCase();
     if (!/^[a-z0-9-]{1,120}$/.test(slug)) return res.status(404).json({ message: 'Vitrine não encontrada.' });
     try {
-        const [stores] = await db.query(`SELECT u.nome_loja, c.whatsapp, c.cidade, c.estado
+        const [stores] = await db.query(`SELECT u.nome_loja, u.foto_perfil, c.whatsapp, c.cidade, c.estado, c.descricao_loja
             FROM vitrine_configuracoes c
             INNER JOIN usuarios u ON u.id = c.usuario_id
             WHERE c.slug = ? AND c.publicada = 1 LIMIT 1`, [slug]);
@@ -124,8 +125,10 @@ const getPublicShowcase = async (req, res) => {
         return res.json({
             loja: {
                 nome: store.nome_loja,
+                fotoPerfil: store.foto_perfil || '',
                 cidade: store.cidade || '',
                 estado: store.estado || '',
+                descricao: store.descricao_loja || '',
                 whatsappUrl: whatsapp ? `https://wa.me/55${whatsapp}` : ''
             },
             anuncios: ads.map((ad) => ({

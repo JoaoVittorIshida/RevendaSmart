@@ -20,7 +20,7 @@ export const DataProvider = ({ children }) => {
     const [canaisCompra, setCanaisCompra] = useState([]);
     const [vendas, setVendas] = useState([]);
     const [anuncios, setAnuncios] = useState([]);
-    const [vitrineConfig, setVitrineConfig] = useState({ publicada: false, slug: '', whatsapp: '', cidade: '', estado: '' });
+    const [vitrineConfig, setVitrineConfig] = useState({ publicada: false, slug: '', whatsapp: '', cidade: '', estado: '', descricaoLoja: '' });
     const [isLoading, setIsLoading] = useState(true);
 
     const authFetch = useCallback(async (endpoint, options = {}) => {

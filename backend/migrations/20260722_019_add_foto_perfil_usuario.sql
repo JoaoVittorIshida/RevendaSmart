@@ -1,0 +1,1 @@
+ALTER TABLE usuarios ADD COLUMN foto_perfil MEDIUMTEXT DEFAULT NULL AFTER nome_loja;

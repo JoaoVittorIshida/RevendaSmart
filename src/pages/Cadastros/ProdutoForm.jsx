@@ -4,6 +4,7 @@ import { useToast } from '../../components/Toast';
 import InlineCreate from '../../components/InlineCreate';
 import { Save, ArrowLeft, Image as ImageIcon, X, Loader2 } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { convertImageToWebp, validateImageFile } from '../../utils/image';
 
 const ProdutoForm = () => {
     const { produtos, adicionarProduto, atualizarProduto, categorias, adicionarCategoria } = useData();
@@ -48,31 +49,13 @@ const ProdutoForm = () => {
         }
     };
 
-    const resizeImage = (file) => new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                let { width, height } = img;
-                const MAX = 800;
-                if (width > height) { if (width > MAX) { height *= MAX / width; width = MAX; } }
-                else { if (height > MAX) { width *= MAX / height; height = MAX; } }
-                canvas.width = width; canvas.height = height;
-                canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-                resolve(canvas.toDataURL('image/jpeg', 0.7));
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-    });
-
     const handleFileChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        if (file.size > 5 * 1024 * 1024) { toast.error('Imagem muito grande', 'Escolha uma imagem menor que 5 MB.'); return; }
+        const validationError = validateImageFile(file);
+        if (validationError) { toast.error('Imagem inválida', validationError); return; }
         try {
-            const resized = await resizeImage(file);
+            const resized = await convertImageToWebp(file, { maxDimension: 1200, quality: 0.82 });
             setFormData({ ...formData, foto: resized });
         } catch {
             toast.error('Erro ao processar imagem', 'Tente novamente com outro arquivo.');
@@ -146,7 +129,7 @@ const ProdutoForm = () => {
                                             <div className="w-full h-full rounded-xl bg-slate-100 dark:bg-slate-700 overflow-hidden border-2 border-transparent hover:border-blue-500 transition-colors shadow-md">
                                                 <img src={formData.foto} alt="Preview" className="w-full h-full object-contain p-2" />
                                             </div>
-                                            <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                                            <input type="file" className="hidden" accept="image/png,image/jpeg,image/webp" onChange={handleFileChange} />
                                         </label>
                                         <button
                                             type="button"
@@ -165,9 +148,9 @@ const ProdutoForm = () => {
                                                     <ImageIcon className="w-10 h-10 text-blue-500" />
                                                 </div>
                                                 <p className="mb-2 text-lg text-slate-700 dark:text-slate-300 font-semibold">Clique para enviar uma foto</p>
-                                                <p className="text-sm text-slate-400 dark:text-slate-500">PNG, JPG ou WEBP (Max 5MB)</p>
+                                                <p className="text-sm text-slate-400 dark:text-slate-500">PNG, JPG ou WEBP (até 5 MB). Salva em WEBP otimizado.</p>
                                             </div>
-                                            <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                                            <input type="file" className="hidden" accept="image/png,image/jpeg,image/webp" onChange={handleFileChange} />
                                         </div>
                                     </label>
                                 )}

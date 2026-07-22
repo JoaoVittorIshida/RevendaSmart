@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowUpRight, ExternalLink, ImageOff, MapPin, MessageCircle, PackageSearch, ShoppingBag, Store, X } from 'lucide-react';
+import { ArrowUpRight, ExternalLink, ImageOff, MapPin, MessageCircle, Moon, PackageSearch, ShoppingBag, Store, Sun, X } from 'lucide-react';
 import { useParams } from 'react-router-dom';
+import { useTheme } from '../contexts/ThemeContext';
 
 const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api`;
 const money = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value) || 0);
@@ -43,6 +44,7 @@ const ProductModal = ({ product, store, onClose }) => {
 
 const VitrinePublica = () => {
     const { slug } = useParams();
+    const { isDark, toggleTheme } = useTheme();
     const [result, setResult] = useState({ slug: null, catalog: null, error: '' });
     const [selected, setSelected] = useState(null);
     const loading = result.slug !== slug;
@@ -77,7 +79,7 @@ const VitrinePublica = () => {
         <div className="public-showcase">
             <header className="public-hero">
                 <div className="public-hero-inner">
-                    <div className="public-brand-mark"><ShoppingBag size={21} /></div>
+                    <div className="public-brand-mark">{catalog.loja.fotoPerfil ? <img src={catalog.loja.fotoPerfil} alt={`Logo ${catalog.loja.nome}`} /> : <ShoppingBag size={21} />}</div>
                     <div className="public-hero-copy">
                         <p className="public-kicker">Catálogo digital</p>
                         <h1>{catalog.loja.nome}</h1>
@@ -86,7 +88,8 @@ const VitrinePublica = () => {
                             <span><Store size={16} />{catalog.anuncios.length} {catalog.anuncios.length === 1 ? 'produto anunciado' : 'produtos anunciados'}</span>
                         </div>
                     </div>
-                    {catalog.loja.whatsappUrl && <a className="public-contact-link" href={catalog.loja.whatsappUrl} target="_blank" rel="noopener noreferrer"><MessageCircle size={18} /><span>Falar no WhatsApp</span><ArrowUpRight size={16} /></a>}
+                    <div className="public-hero-actions"><button type="button" className="public-theme-toggle" onClick={toggleTheme} aria-label={isDark ? 'Usar modo claro' : 'Usar modo escuro'} title={isDark ? 'Modo claro' : 'Modo escuro'}>{isDark ? <Sun size={18} /> : <Moon size={18} />}</button>{catalog.loja.whatsappUrl && <a className="public-contact-link" href={catalog.loja.whatsappUrl} target="_blank" rel="noopener noreferrer"><MessageCircle size={18} /><span>Falar no WhatsApp</span><ArrowUpRight size={16} /></a>}</div>
+                    {catalog.loja.descricao && <p className="public-store-description">{catalog.loja.descricao}</p>}
                 </div>
             </header>
 

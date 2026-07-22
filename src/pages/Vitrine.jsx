@@ -98,7 +98,7 @@ const Vitrine = () => {
     const [adModal, setAdModal] = useState(null);
     const [adForm, setAdForm] = useState(emptyAdForm);
     const [contactOpen, setContactOpen] = useState(false);
-    const [contact, setContact] = useState({ whatsapp: '', cidade: '', estado: '' });
+    const [contact, setContact] = useState({ whatsapp: '', cidade: '', estado: '', descricaoLoja: '' });
     const [savingAd, setSavingAd] = useState(false);
     const [savingContact, setSavingContact] = useState(false);
     const [changingPublication, setChangingPublication] = useState(false);
@@ -177,7 +177,7 @@ const Vitrine = () => {
     };
 
     const openContact = () => {
-        setContact({ whatsapp: formatWhatsapp(vitrineConfig.whatsapp), cidade: vitrineConfig.cidade || '', estado: vitrineConfig.estado || '' });
+        setContact({ whatsapp: formatWhatsapp(vitrineConfig.whatsapp), cidade: vitrineConfig.cidade || '', estado: vitrineConfig.estado || '', descricaoLoja: vitrineConfig.descricaoLoja || '' });
         setContactOpen(true);
     };
 
@@ -225,7 +225,7 @@ const Vitrine = () => {
             <div className="page-header">
                 <div><h1 className="page-title">Vitrine</h1><p className="page-subtitle">Monte seu catálogo, compartilhe o link e continue gerando cards para divulgação.</p></div>
                 <div className="flex flex-wrap gap-2">
-                    <button type="button" className="btn btn-secondary" onClick={openContact}><MessageCircle size={17} />Informações de contato</button>
+                    <button type="button" className="btn btn-secondary" onClick={openContact}><Store size={17} />Configurações da Loja</button>
                     <button type="button" className="btn btn-primary" onClick={openCreate} disabled={!availableProducts.length}><Plus size={18} />Adicionar produto</button>
                 </div>
             </div>
@@ -292,13 +292,14 @@ const Vitrine = () => {
                 </form>
             </Modal>
 
-            <Modal isOpen={contactOpen} onClose={() => !savingContact && setContactOpen(false)} title="Informações de contato" maxWidth="max-w-lg">
+            <Modal isOpen={contactOpen} onClose={() => !savingContact && setContactOpen(false)} title="Configurações da Loja" maxWidth="max-w-lg">
                 <form onSubmit={submitContact} className="space-y-5">
                     <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300"><div className="flex gap-3"><MessageCircle size={20} className="shrink-0" /><p>O WhatsApp aparecerá no cabeçalho da loja e dentro de cada anúncio, com uma mensagem de interesse já preenchida.</p></div></div>
+                    <div><label className="label" htmlFor="descricao-loja">Descrição da loja <span className="font-normal text-slate-400">(opcional)</span></label><textarea id="descricao-loja" className="textarea min-h-28" maxLength="600" value={contact.descricaoLoja} onChange={(event) => setContact({ ...contact, descricaoLoja: event.target.value })} placeholder="Conte brevemente o que sua loja oferece." /><p className="mt-1 text-right text-xs text-slate-400">{contact.descricaoLoja.length}/600</p></div>
                     <div><label className="label" htmlFor="whatsapp-vitrine">WhatsApp com DDD <span className="font-normal text-slate-400">(opcional)</span></label><input id="whatsapp-vitrine" className="input" inputMode="tel" autoComplete="tel" value={contact.whatsapp} onChange={(event) => setContact({ ...contact, whatsapp: formatWhatsapp(event.target.value) })} placeholder="(11) 99999-9999" /></div>
                     <div className="grid grid-cols-[1fr_110px] gap-4"><div><label className="label" htmlFor="cidade-vitrine">Cidade</label><div className="relative"><MapPin size={17} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input id="cidade-vitrine" className="input pl-10" maxLength="100" value={contact.cidade} onChange={(event) => setContact({ ...contact, cidade: event.target.value })} placeholder="Sua cidade" /></div></div><div><label className="label" htmlFor="estado-vitrine">Estado</label><select id="estado-vitrine" className="select" value={contact.estado} onChange={(event) => setContact({ ...contact, estado: event.target.value })}><option value="">UF</option>{states.map((state) => <option key={state} value={state}>{state}</option>)}</select></div></div>
                     <p className="text-xs text-slate-500">Cidade e estado são opcionais, mas devem ser informados juntos.</p>
-                    <div className="flex justify-end gap-3 border-t border-slate-100 pt-5 dark:border-slate-700"><button type="button" className="btn btn-secondary" onClick={() => setContactOpen(false)} disabled={savingContact}>Cancelar</button><button type="submit" className="btn btn-primary" disabled={savingContact}>{savingContact ? 'Salvando...' : 'Salvar informações'}</button></div>
+                    <div className="flex justify-end gap-3 border-t border-slate-100 pt-5 dark:border-slate-700"><button type="button" className="btn btn-secondary" onClick={() => setContactOpen(false)} disabled={savingContact}>Cancelar</button><button type="submit" className="btn btn-primary" disabled={savingContact}>{savingContact ? 'Salvando...' : 'Salvar configurações'}</button></div>
                 </form>
             </Modal>
         </div>

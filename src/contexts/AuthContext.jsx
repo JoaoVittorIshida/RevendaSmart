@@ -74,9 +74,9 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const atualizarConta = async ({ nome, nomeLoja }) => {
+    const atualizarConta = async ({ nome, nomeLoja, fotoPerfil }) => {
         try {
-            const response = await fetch(`${API_URL}/conta`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ nome, nomeLoja }) });
+            const response = await fetch(`${API_URL}/conta`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ nome, nomeLoja, fotoPerfil }) });
             const data = await response.json();
             if (!response.ok) return { success: false, message: data.message || 'Nao foi possivel atualizar a conta.' };
             setUsuario(data.user);

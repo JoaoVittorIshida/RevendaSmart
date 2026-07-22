@@ -9,12 +9,16 @@ const normalizeName = (value) => String(value ?? '').trim();
 const normalizeUsername = (value) => String(value ?? '').trim();
 const normalizeEmail = (value) => String(value ?? '').trim().toLowerCase();
 const isValidEmail = (value) => value.length <= 255 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+const normalizeProfilePhoto = (value) => String(value ?? '').trim();
+const MAX_PROFILE_PHOTO_LENGTH = 900000;
+const isValidProfilePhoto = (value) => !value || /^data:image\/(png|jpe?g|webp);base64,/i.test(value);
 const userDto = (user) => ({
     id: user.id,
     nome: user.nome,
     usuario: user.usuario,
     email: user.email || '',
     nomeLoja: user.nome_loja || '',
+    fotoPerfil: user.foto_perfil || '',
     admin: Boolean(user.admin)
 });
 
@@ -96,7 +100,7 @@ const verifySession = async (req, res) => {
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const [users] = await db.query(
-            'SELECT id, nome, usuario, email, nome_loja, admin, token_version FROM usuarios WHERE id = ?',
+            'SELECT id, nome, usuario, email, nome_loja, foto_perfil, admin, token_version FROM usuarios WHERE id = ?',
             [decoded.id]
         );
 
@@ -125,8 +129,10 @@ const updateAccount = async (req, res) => {
     try {
         const nome = normalizeName(req.body.nome);
         const nomeLoja = normalizeStoreName(req.body.nomeLoja);
+        const fotoPerfil = normalizeProfilePhoto(req.body.fotoPerfil);
         if (!nome || nome.length > 255) return res.status(400).json({ message: 'Informe um nome completo de até 255 caracteres.' });
         if (nomeLoja.length > 100) return res.status(400).json({ message: 'O nome da loja pode ter no máximo 100 caracteres.' });
+        if (fotoPerfil.length > MAX_PROFILE_PHOTO_LENGTH || !isValidProfilePhoto(fotoPerfil)) return res.status(400).json({ message: 'A foto de perfil deve ser PNG, JPG ou WEBP e respeitar o limite permitido.' });
 
         connection = await db.getConnection();
         await connection.beginTransaction();
@@ -136,9 +142,9 @@ const updateAccount = async (req, res) => {
         if (!nomeLoja && showcases[0]?.publicada) {
             throw Object.assign(new Error('Despublique a Vitrine antes de apagar o nome da loja.'), { status: 409 });
         }
-        const [result] = await connection.query('UPDATE usuarios SET nome = ?, nome_loja = ? WHERE id = ?', [nome, nomeLoja || null, req.user.id]);
+        const [result] = await connection.query('UPDATE usuarios SET nome = ?, nome_loja = ?, foto_perfil = ? WHERE id = ?', [nome, nomeLoja || null, fotoPerfil || null, req.user.id]);
         if (!result.affectedRows) throw Object.assign(new Error('Usuário não encontrado.'), { status: 404 });
-        const [users] = await connection.query('SELECT id, nome, usuario, email, nome_loja, admin FROM usuarios WHERE id = ?', [req.user.id]);
+        const [users] = await connection.query('SELECT id, nome, usuario, email, nome_loja, foto_perfil, admin FROM usuarios WHERE id = ?', [req.user.id]);
         await connection.commit();
         return res.json({ user: userDto(users[0]) });
     } catch (error) {
