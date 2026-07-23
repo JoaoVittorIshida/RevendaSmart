@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { randomUUID } = require('crypto');
 const { validatePassword, MIN_PASSWORD_LENGTH, MAX_PASSWORD_BYTES } = require('../utils/passwordPolicy');
+const { verifyTurnstileToken } = require('../utils/turnstile');
 
 const normalizeStoreName = (value) => String(value ?? '').trim();
 const normalizeName = (value) => String(value ?? '').trim();
@@ -30,6 +31,20 @@ const tokenCookieOptions = () => ({
 
 const register = async (req, res) => {
     try {
+        const turnstileResult = await verifyTurnstileToken({
+            token: req.body.turnstileToken,
+            remoteIp: req.ip
+        });
+        if (!turnstileResult.success) {
+            console.warn('Cadastro recusado pelo Turnstile:', turnstileResult.reason, turnstileResult.errorCodes);
+            const serviceUnavailable = ['configuration-error', 'service-error'].includes(turnstileResult.reason);
+            return res.status(serviceUnavailable ? 503 : 400).json({
+                message: serviceUnavailable
+                    ? 'A verificação de segurança está indisponível. Tente novamente em instantes.'
+                    : 'Não foi possível confirmar a verificação de segurança. Tente novamente.'
+            });
+        }
+
         const nome = normalizeName(req.body.nome);
         const usuario = normalizeUsername(req.body.usuario);
         const email = normalizeEmail(req.body.email);

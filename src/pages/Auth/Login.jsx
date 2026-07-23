@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Lock } from 'lucide-react';
+import { ArrowLeft, User, Lock } from 'lucide-react';
 import ApiHealthIndicator from '../../components/ApiHealthIndicator';
 import { useApiHealth } from '../../hooks/useApiHealth';
 
@@ -42,6 +42,9 @@ const Login = () => {
             <div className="auth-card">
                 <ApiHealthIndicator isOnline={apiHealth.isOnline} status={apiHealth.status} />
                 <div className="auth-header">
+                    <Link to="/" className="auth-back-link">
+                        <ArrowLeft size={16} /> Voltar para o início
+                    </Link>
                     <div className="auth-brand-icon">
                         <span>RS</span>
                     </div>

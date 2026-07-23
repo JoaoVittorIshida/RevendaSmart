@@ -3,7 +3,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { Store, User, Lock, Type, ArrowLeft, Mail } from 'lucide-react';
 import ApiHealthIndicator from '../../components/ApiHealthIndicator';
+import TurnstileWidget from '../../components/TurnstileWidget';
 import { useApiHealth } from '../../hooks/useApiHealth';
+
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
 const Cadastro = () => {
     const { registrar, loading } = useAuth();
@@ -17,6 +20,8 @@ const Cadastro = () => {
         nomeLoja: ''
     });
     const [error, setError] = useState('');
+    const [turnstileToken, setTurnstileToken] = useState('');
+    const [turnstileReset, setTurnstileReset] = useState(0);
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -30,13 +35,23 @@ const Cadastro = () => {
             setError('A senha deve ter pelo menos 8 caracteres.');
             return;
         }
+        if (!turnstileToken) {
+            setError('Confirme a verificação de segurança.');
+            return;
+        }
 
         try {
-            const result = await registrar(formData.nome, formData.usuario, formData.email, formData.senha, formData.nomeLoja);
+            const result = await registrar(formData.nome, formData.usuario, formData.email, formData.senha, formData.nomeLoja, turnstileToken);
             if (result.success) navigate('/login');
-            else setError(result.message);
+            else {
+                setError(result.message);
+                setTurnstileToken('');
+                setTurnstileReset((value) => value + 1);
+            }
         } catch {
             setError('Ocorreu um erro ao criar a conta.');
+            setTurnstileToken('');
+            setTurnstileReset((value) => value + 1);
         }
     };
 
@@ -104,7 +119,15 @@ const Cadastro = () => {
                             <div className="auth-server-warning">Servidor iniciando. O cadastro será liberado quando API e banco estiverem online.</div>
                         )}
 
-                        <button type="submit" disabled={loading || !apiHealth.isOnline} className="auth-button">
+                        <TurnstileWidget
+                            siteKey={TURNSTILE_SITE_KEY}
+                            onVerify={(token) => setTurnstileToken(token)}
+                            onExpire={() => setTurnstileToken('')}
+                            onError={() => setTurnstileToken('')}
+                            resetSignal={turnstileReset}
+                        />
+
+                        <button type="submit" disabled={loading || !apiHealth.isOnline || !turnstileToken} className="auth-button">
                             {loading ? 'Cadastrando...' : 'Finalizar cadastro'}
                         </button>
                     </form>

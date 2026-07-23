@@ -47,10 +47,10 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const registrar = async (nome, loginUsuario, email, senha, nomeLoja = '') => {
+    const registrar = async (nome, loginUsuario, email, senha, nomeLoja = '', turnstileToken = '') => {
         setLoading(true);
         try {
-            const response = await fetch(`${API_URL}/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ nome, usuario: loginUsuario, email, senha, nomeLoja }) });
+            const response = await fetch(`${API_URL}/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ nome, usuario: loginUsuario, email, senha, nomeLoja, turnstileToken }) });
             const data = await response.json();
             return response.ok ? { success: true } : { success: false, message: data.message || 'Erro ao cadastrar.' };
         } catch (error) {

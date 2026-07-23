@@ -8,6 +8,7 @@ import { ToastProvider } from './components/Toast';
 import { ConfirmProvider } from './components/ConfirmDialog';
 const Login = lazy(() => import('./pages/Auth/Login'));
 const Cadastro = lazy(() => import('./pages/Auth/Cadastro'));
+const Home = lazy(() => import('./pages/Home'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Vendas = lazy(() => import('./pages/Vendas'));
 const HistoricoVendas = lazy(() => import('./pages/HistoricoVendas'));
@@ -185,6 +186,14 @@ const GuestRoute = ({ children }) => {
   return children;
 };
 
+const HomeRoute = () => {
+  const { usuario, loading } = useAuth();
+  if (loading) return <div className="session-loading"><div /><p>Carregando...</p></div>;
+  if (usuario?.admin) return <Navigate to="/admin" replace />;
+  if (usuario) return <Layout><Dashboard /></Layout>;
+  return <Home />;
+};
+
 function App() {
   return (
     <ThemeProvider>
@@ -198,7 +207,7 @@ function App() {
                   <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
                   <Route path="/cadastro" element={<GuestRoute><Cadastro /></GuestRoute>} />
                   <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-                  <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+                  <Route path="/" element={<HomeRoute />} />
                   <Route path="/vendas" element={<PrivateRoute><Vendas /></PrivateRoute>} />
                   <Route path="/historico-vendas" element={<PrivateRoute><HistoricoVendas /></PrivateRoute>} />
                   <Route path="/recebimentos" element={<PrivateRoute><Recebimentos /></PrivateRoute>} />

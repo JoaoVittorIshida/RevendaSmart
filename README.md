@@ -84,6 +84,17 @@ Volte para a pasta principal do projeto e instale as dependências:
 npm install
 ```
 
+### Proteção do cadastro com Cloudflare Turnstile
+
+O cadastro exige um token do Turnstile e o valida no backend antes de criar a conta. Para configurar:
+
+1. Crie um widget em [Cloudflare Turnstile](https://dash.cloudflare.com/?to=/:account/turnstile) e autorize o domínio do frontend.
+2. Configure `VITE_TURNSTILE_SITE_KEY` no ambiente do frontend com a **sitekey**.
+3. Configure `TURNSTILE_SECRET_KEY` no ambiente do backend com a **secret key**. Essa chave nunca deve ir para o frontend.
+4. Opcionalmente, configure `TURNSTILE_EXPECTED_HOSTNAME=seudominio.com.br` no backend para validar também o hostname.
+
+Os arquivos `.env.example` incluem as chaves oficiais de teste da Cloudflare para desenvolvimento local. Elas sempre aprovam o desafio e **não podem ser usadas em produção**.
+
 **5. Tudo pronto! Hora de rodar 🚀**
 Com um único comando na pasta raiz do projeto, você inicia tanto a API quanto a interface visual:
 ```bash
