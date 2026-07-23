@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, CalendarClock, Package, Plus, Trash2, Unlock } from 'lucide-react';
+import { AlertTriangle, CalendarClock, CircleHelp, Package, Plus, TrendingUp, Trash2, Unlock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
+import { calculateRevenueForecast } from '../utils/revenueForecast';
 
 const money = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
 const ageInDays = (date) => Math.floor((Date.now() - new Date(date).getTime()) / 86400000);
@@ -16,7 +17,7 @@ const tomorrowInputDate = () => {
 const reservationIsExpired = (item) => item.status === 'reservado' && item.reservadoAte && new Date(item.reservadoAte).getTime() <= Date.now();
 
 const Estoque = () => {
-    const { produtos, itensEstoque, removerItemEstoque, reservarItem, liberarReserva, isLoading } = useData();
+    const { produtos, itensEstoque, vendas, removerItemEstoque, reservarItem, liberarReserva, isLoading } = useData();
     const toast = useToast();
     const confirm = useConfirm();
     const [filter, setFilter] = useState('todos');
@@ -32,7 +33,11 @@ const Estoque = () => {
         if (filter.endsWith('+')) return item.status !== 'vendido' && age >= Number.parseInt(filter, 10);
         return item.status !== 'vendido';
     }), [filter, itensEstoque]);
-    const invested = itensEstoque.filter((item) => item.status !== 'vendido').reduce((sum, item) => sum + item.precoCusto, 0);
+    const forecast = useMemo(
+        () => calculateRevenueForecast({ vendas, itensEstoque, produtos }),
+        [vendas, itensEstoque, produtos]
+    );
+    const invested = forecast.invested;
     const stopped = itensEstoque.filter((item) => item.status !== 'vendido' && ageInDays(item.dataEntrada) >= 30).length;
     const expiredReservations = itensEstoque.filter(reservationIsExpired);
     const groups = produtos
@@ -91,7 +96,7 @@ const Estoque = () => {
     };
 
     if (isLoading) {
-        return <div className="container"><div className="page-header"><div><h1 className="page-title">Estoque</h1><p className="page-subtitle">Carregando seu estoque...</p></div></div><div className="grid sm:grid-cols-2 gap-4"><div className="card h-32 animate-pulse bg-slate-100 dark:bg-slate-800" /><div className="card h-32 animate-pulse bg-slate-100 dark:bg-slate-800" /></div></div>;
+        return <div className="container"><div className="page-header"><div><h1 className="page-title">Estoque</h1><p className="page-subtitle">Carregando seu estoque...</p></div></div><div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4"><div className="card h-32 animate-pulse bg-slate-100 dark:bg-slate-800" /><div className="card h-32 animate-pulse bg-slate-100 dark:bg-slate-800" /><div className="card h-32 animate-pulse bg-slate-100 dark:bg-slate-800 sm:col-span-2 xl:col-span-1" /></div></div>;
     }
 
     return <div className="container">
@@ -100,9 +105,42 @@ const Estoque = () => {
             <Link to="/estoque/entrada" className="btn btn-primary"><Plus size={18} />Nova entrada</Link>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-4 mb-6">
+        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
             <div className="card border-blue-200 dark:border-blue-900"><p className="stat-label">Capital imobilizado</p><p className="font-mono text-2xl font-bold text-blue-700 dark:text-blue-400">{money(invested)}</p><p className="text-xs text-slate-500 mt-1">Itens disponíveis e reservados</p></div>
-            <div className="card border-amber-200 dark:border-amber-900"><p className="stat-label">Itens parados há 30+ dias</p><p className="font-mono text-2xl font-bold text-amber-700 dark:text-amber-400">{stopped}</p><p className="text-xs text-slate-500 mt-1">Use o filtro para revisar oportunidades</p></div>
+            <div className="card relative overflow-hidden border-emerald-200 dark:border-emerald-900">
+                <TrendingUp className="absolute -right-3 -top-3 text-emerald-100 dark:text-emerald-950" size={82} strokeWidth={1.5} aria-hidden="true" />
+                <div className="relative">
+                    <div className="flex items-center gap-1.5">
+                        <p className="stat-label">Faturamento estimado</p>
+                        <span
+                            className="text-slate-400"
+                            title="Estimativa de retorno líquido: usa o ROI histórico por categoria e o ROI geral quando há poucos dados."
+                            aria-label="Estimativa baseada no ROI histórico por categoria, ajustado pelo ROI geral quando há poucos dados"
+                        >
+                            <CircleHelp size={15} />
+                        </span>
+                    </div>
+                    {forecast.hasForecast ? (
+                        <>
+                            <p className="font-mono text-2xl font-bold text-emerald-700 dark:text-emerald-400">{money(forecast.estimatedRevenue)}</p>
+                            <p className={`mt-1 text-xs font-medium ${forecast.estimatedProfit >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                                {forecast.estimatedProfit >= 0 ? 'Lucro potencial' : 'Perda potencial'}: {money(Math.abs(forecast.estimatedProfit))} · ROI {forecast.projectedRoi.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%
+                            </p>
+                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                Confiança {forecast.confidence} · {plural(forecast.sampleSize, 'venda analisada', 'vendas analisadas')}
+                            </p>
+                        </>
+                    ) : (
+                        <>
+                            <p className="font-mono text-2xl font-bold text-slate-400">—</p>
+                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                {invested > 0 ? 'Registre vendas completas para gerar a estimativa' : 'Adicione itens ao estoque para gerar a estimativa'}
+                            </p>
+                        </>
+                    )}
+                </div>
+            </div>
+            <div className="card border-amber-200 dark:border-amber-900 sm:col-span-2 xl:col-span-1"><p className="stat-label">Itens parados há 30+ dias</p><p className="font-mono text-2xl font-bold text-amber-700 dark:text-amber-400">{stopped}</p><p className="text-xs text-slate-500 mt-1">Use o filtro para revisar oportunidades</p></div>
         </div>
 
         {expiredReservations.length > 0 && <section role="alert" className="mb-6 flex flex-col gap-4 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-amber-950 shadow-sm dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100 sm:flex-row sm:items-center sm:justify-between">

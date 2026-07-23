@@ -107,6 +107,30 @@ test('receipt confirmation uses a review modal instead of changing the date in t
     assert.match(receiptPage, /<Modal/);
 });
 
+test('product catalog supports list view and sales history exposes filters and profit', () => {
+    const productsPage = read('src', 'pages', 'Cadastros', 'Produtos.jsx');
+    const salesHistory = read('src', 'pages', 'HistoricoVendas.jsx');
+    assert.match(productsPage, /produtos-visualizacao/);
+    assert.match(productsPage, /Todas as categorias/);
+    assert.match(productsPage, /visualizacao === 'lista'/);
+    assert.match(salesHistory, /Todas as categorias/);
+    assert.match(salesHistory, /Todos os canais/);
+    assert.match(salesHistory, /const saleProfit/);
+    assert.match(salesHistory, /sale\.status === 'cancelada'/);
+    assert.match(salesHistory, /aria-sort=/);
+    assert.match(salesHistory, /sortHead\('lucro', 'Lucro'/);
+});
+
+test('stock page exposes a revenue forecast based on historical category ROI', () => {
+    const stockPage = read('src', 'pages', 'Estoque.jsx');
+    const forecast = read('src', 'utils', 'revenueForecast.js');
+    assert.match(stockPage, /Faturamento estimado/);
+    assert.match(stockPage, /calculateRevenueForecast/);
+    assert.match(forecast, /CATEGORY_PRIOR_SALES/);
+    assert.match(forecast, /sale\.status === 'concluida'/);
+    assert.match(forecast, /category\.sales \+ CATEGORY_PRIOR_SALES/);
+});
+
 test('public showcase exposes an explicit DTO and account name is protected while published', () => {
     const showcase = read('backend', 'controllers', 'showcaseController.js');
     const account = read('backend', 'controllers', 'authController.js');
