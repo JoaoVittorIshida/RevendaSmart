@@ -20,7 +20,7 @@ const CentralCadastros = () => {
         <div className="container">
             <h1 className="page-title mb-8">Central de Cadastros</h1>
 
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
                 <CadastroCard
                     to="/cadastros/produtos"
                     icon={Package}

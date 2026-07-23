@@ -54,7 +54,7 @@ const InlineCreate = ({ label, onSave, onCreated }) => {
             <button
                 type="button"
                 onClick={handleOpen}
-                className="flex items-center gap-0.5 text-xs font-semibold text-blue-500 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+            className="flex min-h-11 items-center gap-0.5 rounded-lg px-1 text-xs font-semibold text-blue-500 transition-colors hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/30 dark:hover:text-blue-300"
             >
                 <Plus size={12} strokeWidth={2.5} />
                 Nova {label}

@@ -409,7 +409,7 @@ const Dashboard = () => {
                 </div>
 
                 <div className="flex flex-wrap items-center justify-end gap-3 self-start sm:self-auto">
-                    <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"><input type="checkbox" checked={incluirPendentes} onChange={(event) => setIncluirPendentes(event.target.checked)} className="h-4 w-4 accent-blue-600" />Incluir pendentes</label>
+                <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"><input type="checkbox" checked={incluirPendentes} onChange={(event) => setIncluirPendentes(event.target.checked)} className="h-4 w-4 accent-blue-600" />Incluir pendentes</label>
                     <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                     {[
                         { key: 'total', label: 'Total' },
@@ -418,7 +418,7 @@ const Dashboard = () => {
                         <button
                             key={option.key}
                             onClick={() => setPeriodo(option.key)}
-                            className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
+                                    className={`min-h-11 px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
                                 periodo === option.key
                                     ? 'bg-blue-600 text-white shadow-sm'
                                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'

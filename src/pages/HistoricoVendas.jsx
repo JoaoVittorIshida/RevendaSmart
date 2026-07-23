@@ -140,25 +140,25 @@ const HistoricoVendas = () => {
                         <option value="pendente">Recebimento pendente</option>
                         <option value="cancelada">Canceladas</option>
                     </select>
-                    <button type="button" onClick={clearFilters} disabled={!activeFilterCount} className="btn btn-secondary disabled:cursor-not-allowed disabled:opacity-50">
+                    <button type="button" onClick={clearFilters} disabled={!activeFilterCount} className="btn btn-secondary w-full disabled:cursor-not-allowed disabled:opacity-50 xl:w-auto">
                         <FilterX size={18} /> Limpar {activeFilterCount ? `(${activeFilterCount})` : ''}
                     </button>
                 </div>
                 <div className="mt-3 flex flex-col gap-3 border-t border-slate-100 pt-3 dark:border-slate-700 sm:flex-row sm:items-center">
                     <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Período da venda</span>
-                    <label className="flex items-center gap-2 text-sm text-slate-500">
+                    <label className="flex min-w-0 flex-col gap-1 text-sm text-slate-500 min-[420px]:flex-row min-[420px]:items-center min-[420px]:gap-2">
                         De
-                        <input type="date" className="input date-input w-auto py-2" value={startDate} max={endDate || undefined} onChange={(event) => { setStartDate(event.target.value); resetPage(); }} />
+                        <input type="date" className="input date-input w-full py-2 min-[420px]:w-auto" value={startDate} max={endDate || undefined} onChange={(event) => { setStartDate(event.target.value); resetPage(); }} />
                     </label>
-                    <label className="flex items-center gap-2 text-sm text-slate-500">
+                    <label className="flex min-w-0 flex-col gap-1 text-sm text-slate-500 min-[420px]:flex-row min-[420px]:items-center min-[420px]:gap-2">
                         Até
-                        <input type="date" className="input date-input w-auto py-2" value={endDate} min={startDate || undefined} onChange={(event) => { setEndDate(event.target.value); resetPage(); }} />
+                        <input type="date" className="input date-input w-full py-2 min-[420px]:w-auto" value={endDate} min={startDate || undefined} onChange={(event) => { setEndDate(event.target.value); resetPage(); }} />
                     </label>
                 </div>
             </div>
 
             <div className="card overflow-hidden p-0">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-4 dark:border-slate-700 sm:px-6">
                     <h2 className="section-heading"><FileText size={18} className="text-blue-500" />{searchTerm || activeFilterCount ? 'Resultados filtrados' : 'Todas as vendas'}</h2>
                     <span className="badge badge-blue">{processedVendas.length} {processedVendas.length === 1 ? 'registro' : 'registros'}</span>
                 </div>
@@ -202,9 +202,9 @@ const HistoricoVendas = () => {
                     )}
                 </div>
                 {processedVendas.length > 0 && (
-                    <div className="p-4 border-t border-slate-100 dark:border-slate-700 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-sm">
+                    <div className="flex flex-col gap-3 border-t border-slate-100 p-4 text-sm dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-2"><span>Mostrar</span><select value={itemsPerPage} onChange={(event) => { setItemsPerPage(Number(event.target.value)); resetPage(); }} className="input w-auto py-1"><option value={10}>10</option><option value={20}>20</option><option value={50}>50</option></select><span>por página</span></div>
-                        <div className="flex items-center gap-3"><span>{(safePage - 1) * itemsPerPage + 1}–{Math.min(safePage * itemsPerPage, processedVendas.length)} de {processedVendas.length}</span><button onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={safePage === 1} className="p-1 disabled:opacity-40" aria-label="Página anterior"><ChevronLeft size={20} /></button><span>{safePage} / {totalPages}</span><button onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={safePage === totalPages} className="p-1 disabled:opacity-40" aria-label="Próxima página"><ChevronRight size={20} /></button></div>
+                        <div className="flex flex-wrap items-center justify-between gap-2 sm:justify-end"><span className="mr-auto sm:mr-1">{(safePage - 1) * itemsPerPage + 1}–{Math.min(safePage * itemsPerPage, processedVendas.length)} de {processedVendas.length}</span><button onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={safePage === 1} className="grid min-h-10 min-w-10 place-items-center rounded-lg disabled:opacity-40" aria-label="Página anterior"><ChevronLeft size={20} /></button><span>{safePage} / {totalPages}</span><button onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={safePage === totalPages} className="grid min-h-10 min-w-10 place-items-center rounded-lg disabled:opacity-40" aria-label="Próxima página"><ChevronRight size={20} /></button></div>
                     </div>
                 )}
             </div>

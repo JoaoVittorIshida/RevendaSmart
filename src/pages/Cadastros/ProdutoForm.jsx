@@ -65,11 +65,11 @@ const ProdutoForm = () => {
     return (
         <div className="container max-w-4xl mx-auto">
             {/* Header */}
-            <div className="flex items-center gap-4 mb-8">
+            <div className="mb-6 flex min-w-0 items-start gap-3 sm:mb-8 sm:items-center sm:gap-4">
                 <Link to="/cadastros/produtos" className="btn-back shrink-0">
                     <ArrowLeft size={20} />
                 </Link>
-                <div>
+                <div className="min-w-0">
                     <h1 className="page-title">{isEditing ? 'Editar Produto' : 'Novo Produto'}</h1>
                     <p className="page-subtitle">
                         {isEditing ? 'Atualize as informações do produto' : 'Preencha os dados para cadastrar um novo produto'}
@@ -142,7 +142,7 @@ const ProdutoForm = () => {
                                     </div>
                                 ) : (
                                     <label className="cursor-pointer w-full">
-                                        <div className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors bg-slate-50 dark:bg-slate-800/50 group">
+                                    <div className="flex h-56 w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 text-center transition-colors hover:border-blue-500 hover:bg-blue-50 dark:border-slate-600 dark:bg-slate-800/50 dark:hover:bg-blue-900/20 sm:h-64">
                                             <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                                 <div className="p-4 bg-white dark:bg-slate-700 rounded-full shadow-sm mb-4 group-hover:scale-110 transition-transform">
                                                     <ImageIcon className="w-10 h-10 text-blue-500" />
@@ -159,7 +159,7 @@ const ProdutoForm = () => {
                     </div>
 
                     {/* Footer */}
-                    <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-slate-100 dark:border-slate-700">
+                    <div className="mt-8 flex flex-col-reverse gap-2 border-t border-slate-100 pt-6 dark:border-slate-700 sm:flex-row sm:justify-end sm:gap-3">
                         <Link to="/cadastros/produtos" className="btn btn-secondary">Cancelar</Link>
                         <button type="submit" className="btn btn-primary px-8" disabled={loading}>
                             {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}

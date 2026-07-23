@@ -169,11 +169,11 @@ const EstoqueForm = () => {
     return (
         <div className="container max-w-4xl mx-auto">
             {/* Page header */}
-            <div className="flex items-center gap-4 mb-8">
+            <div className="mb-6 flex min-w-0 items-start gap-3 sm:mb-8 sm:items-center sm:gap-4">
                 <Link to="/estoque" className="btn-back">
                     <ArrowLeft size={20} />
                 </Link>
-                <div>
+                <div className="min-w-0">
                     <h1 className="page-title flex items-center gap-3">
                         <ArrowDownRight className="text-blue-600" size={28} />
                         Nova Entrada de Estoque
@@ -257,9 +257,9 @@ const EstoqueForm = () => {
                         {/* Origem */}
                         <div className="form-group">
                             <label className="label">Origem</label>
-                            <div className="flex gap-4 mt-2">
+                            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
                                 {['importado', 'nacional'].map(op => (
-                                    <label key={op} className="flex items-center gap-2 text-slate-600 dark:text-slate-400 cursor-pointer hover:text-slate-800 dark:hover:text-slate-200 transition-colors capitalize">
+                                    <label key={op} className="flex min-h-11 cursor-pointer items-center gap-2 capitalize text-slate-600 transition-colors hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200">
                                         <input
                                             type="radio" name="origem" value={op}
                                             checked={formData.origem === op}
@@ -273,7 +273,7 @@ const EstoqueForm = () => {
                     </div>
 
                     {/* Footer buttons */}
-                    <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-slate-100 dark:border-slate-700">
+                <div className="mt-8 flex flex-col-reverse gap-2 border-t border-slate-100 pt-6 dark:border-slate-700 sm:flex-row sm:justify-end sm:gap-3">
                         <Link to="/estoque" className="btn btn-secondary">Cancelar</Link>
                         <button type="submit" disabled={loading} className="btn btn-primary px-8">
                             <Save size={18} />

@@ -57,7 +57,7 @@ const styles = {
 };
 
 const ToastItem = ({ toast, onRemove }) => (
-    <div className={`flex items-start gap-3 px-4 py-3.5 rounded-xl border-l-4 shadow-lg min-w-[300px] max-w-sm animate-in slide-in-from-right-4 duration-300 ${styles[toast.type]}`}>
+    <div className={`flex w-full min-w-0 items-start gap-3 rounded-xl border-l-4 px-4 py-3.5 shadow-lg sm:min-w-[300px] sm:max-w-sm animate-in slide-in-from-right-4 duration-300 ${styles[toast.type]}`}>
         <span className="toast-icon mt-0.5">{icons[toast.type]}</span>
         <div className="flex-1 min-w-0">
             {toast.title && <p className="font-semibold text-sm leading-tight">{toast.title}</p>}
@@ -65,7 +65,7 @@ const ToastItem = ({ toast, onRemove }) => (
         </div>
         <button
             onClick={() => onRemove(toast.id)}
-            className="text-slate-300 dark:text-slate-500 hover:text-slate-500 dark:hover:text-slate-300 transition-colors shrink-0 mt-0.5"
+            className="-m-2 mt-[-0.375rem] grid min-h-10 min-w-10 shrink-0 place-items-center rounded-lg text-slate-300 transition-colors hover:bg-slate-100 hover:text-slate-500 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-300"
         >
             <X size={16} />
         </button>
@@ -75,7 +75,7 @@ const ToastItem = ({ toast, onRemove }) => (
 const ToastContainer = ({ toasts, onRemove }) => {
     if (toasts.length === 0) return null;
     return (
-        <div className="fixed bottom-5 right-5 z-[9999] flex flex-col gap-2">
+        <div className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-[9999] flex flex-col gap-2 sm:inset-x-auto sm:right-5 sm:bottom-5">
             {toasts.map(t => (
                 <ToastItem key={t.id} toast={t} onRemove={onRemove} />
             ))}

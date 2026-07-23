@@ -57,7 +57,7 @@ const Produtos = () => {
             <button
                 type="button"
                 onClick={() => navigate(`/cadastros/produtos/editar/${produto.id}`)}
-                className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                    className="grid min-h-10 min-w-10 place-items-center rounded-lg text-blue-600 transition-colors hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
                 title={`Editar ${produto.nome}`}
                 aria-label={`Editar ${produto.nome}`}
             >
@@ -66,7 +66,7 @@ const Produtos = () => {
             <button
                 type="button"
                 onClick={() => handleDelete(produto.id, produto.nome)}
-                className="p-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    className="grid min-h-10 min-w-10 place-items-center rounded-lg text-red-500 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                 title={`Excluir ${produto.nome}`}
                 aria-label={`Excluir ${produto.nome}`}
             >
@@ -87,7 +87,7 @@ const Produtos = () => {
                         <p className="page-subtitle">Gerencie seu catálogo de produtos</p>
                     </div>
                 </div>
-                <Link to="/cadastros/produtos/novo" className="btn btn-primary">
+                <Link to="/cadastros/produtos/novo" className="btn btn-primary w-full md:w-auto">
                     <Plus size={20} />
                     Novo produto
                 </Link>
@@ -118,7 +118,7 @@ const Produtos = () => {
                         <button
                             type="button"
                             onClick={() => setVisualizacao('cards')}
-                            className={`flex flex-1 lg:flex-none items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${visualizacao === 'cards' ? 'bg-white text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-300' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'}`}
+                            className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-colors lg:flex-none ${visualizacao === 'cards' ? 'bg-white text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-300' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'}`}
                             aria-pressed={visualizacao === 'cards'}
                         >
                             <Grid2X2 size={17} /> Cards
@@ -126,7 +126,7 @@ const Produtos = () => {
                         <button
                             type="button"
                             onClick={() => setVisualizacao('lista')}
-                            className={`flex flex-1 lg:flex-none items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${visualizacao === 'lista' ? 'bg-white text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-300' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'}`}
+                            className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-colors lg:flex-none ${visualizacao === 'lista' ? 'bg-white text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-300' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'}`}
                             aria-pressed={visualizacao === 'lista'}
                         >
                             <List size={18} /> Lista

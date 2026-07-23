@@ -94,11 +94,11 @@ const Layout = ({ children }) => {
       )}
 
       {/* Sidebar */}
-      <aside className={`sidebar fixed lg:sticky top-0 z-40 h-screen transition-transform duration-300 ease-in-out
+      <aside className={`sidebar fixed lg:sticky top-0 z-40 h-dvh max-w-[calc(100vw-2rem)] overflow-hidden transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
       >
         {/* Brand */}
-        <div className="flex items-center justify-between mb-8 px-1">
+        <div className="mb-4 flex shrink-0 items-center justify-between px-1 lg:mb-8">
           <div className="flex items-center gap-3 min-w-0">
             <BrandMark photo={profilePhoto} storeName={storeName} />
             <div className="min-w-0">
@@ -106,23 +106,23 @@ const Layout = ({ children }) => {
               <span className="text-xs text-blue-400 font-medium truncate block">{firstName}</span>
             </div>
           </div>
-          <button onClick={closeSidebar} className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors shrink-0" aria-label="Fechar menu">
+          <button onClick={closeSidebar} className="grid min-h-11 min-w-11 shrink-0 place-items-center rounded-xl text-slate-400 transition-colors hover:bg-white/10 hover:text-white lg:hidden" aria-label="Fechar menu">
             <X size={20} />
           </button>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-1 space-y-0.5">
+        <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-1 pb-2 pr-2">
           {NAV_ITEMS.map(item => (
             <SidebarLink key={item.to} {...item} onClick={closeSidebar} />
           ))}
         </nav>
 
         {/* Footer — theme toggle + logout */}
-        <div className="pt-4 border-t border-white/10 px-1">
+        <div className="shrink-0 border-t border-white/10 px-1 pt-3 [padding-bottom:max(env(safe-area-inset-bottom),0.25rem)]">
           <SidebarLink to="/minha-conta" icon={UserRound} label="Minha Conta" onClick={closeSidebar} />
           <div className="flex items-center gap-2 pt-1">
-            <ThemeToggle className="hover:bg-white/10 flex-shrink-0" />
+            <ThemeToggle className="min-h-11 min-w-11 flex-shrink-0 hover:bg-white/10" />
             <button onClick={logout} className="sidebar-logout flex-1">
               <LogOut size={18} />
               <span className="font-medium text-sm">Sair</span>
@@ -132,18 +132,18 @@ const Layout = ({ children }) => {
       </aside>
 
       {/* Right side */}
-      <div className="flex flex-col flex-1 min-w-0 min-h-screen">
+      <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
 
         {/* Mobile topbar */}
         <header className="topbar lg:hidden">
-          <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" aria-label="Abrir menu">
+          <button onClick={() => setSidebarOpen(true)} className="grid min-h-11 min-w-11 place-items-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100" aria-label="Abrir menu">
             <Menu size={22} />
           </button>
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 flex-1 items-center justify-center gap-2 px-1">
             <BrandMark compact photo={profilePhoto} storeName={storeName} />
-            <span className="font-bold text-slate-800 dark:text-slate-100 text-sm truncate max-w-44">{storeName}</span>
+            <span className="max-w-44 truncate text-sm font-bold text-slate-800 dark:text-slate-100">{storeName}</span>
           </div>
-          <ThemeToggle className="hover:bg-slate-100 dark:hover:bg-slate-700" />
+          <ThemeToggle className="min-h-11 min-w-11 hover:bg-slate-100 dark:hover:bg-slate-700" />
         </header>
 
         <main className="main-content">
@@ -158,7 +158,7 @@ const PrivateRoute = ({ children }) => {
   const { usuario, loading } = useAuth();
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+      <div className="flex min-h-dvh items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 animate-pulse" />
           <p className="text-sm font-medium text-slate-400">Carregando...</p>
@@ -202,7 +202,7 @@ function App() {
           <ConfirmProvider>
             <DataProvider>
               <Router>
-                <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-500">Carregando...</div>}>
+                <Suspense fallback={<div className="flex min-h-dvh items-center justify-center bg-slate-50 text-slate-500 dark:bg-slate-950">Carregando...</div>}>
                 <Routes>
                   <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
                   <Route path="/cadastro" element={<GuestRoute><Cadastro /></GuestRoute>} />
